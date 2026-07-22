@@ -307,7 +307,7 @@ function dpTopNPlusOther(rows, valueKey, labelKey, n){
 // Isi dengan URL Web App (diakhiri /exec) setelah Deploy > New deployment > Web app.
 // Hanya dipakai kalau file ini dibuka DI LUAR Apps Script (misal di-host di GitHub Pages).
 // Kalau dibuka lewat menu di Spreadsheet, baris ini diabaikan otomatis.
-var WEBAPP_URL = 'PASTE_URL_WEB_APP_DI_SINI';
+var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx-1gAUoU6501QMmD6iU3jHWTNIcOqPfet8aG1_WwxLBRSQwHuv3ifXeS55swCCD25y/exec';
 
 function dpFetchData(filters, onSuccess, onError){
   var runningInsideAppsScript = (typeof google !== 'undefined' && google.script && google.script.run);
