@@ -348,14 +348,14 @@ function dpApplyFilter(){
 function dpRenderAll(data){
   document.getElementById('stTime').textContent = new Date(data.generatedAt).toLocaleString('id-ID');
   var totalRows = 0;
-  ['giling','wip','thermo','extruder','totalSheet','tehnik'].forEach(function(k){
+  ['giling','wip','hasilThermo','extruder','totalSheet','tehnik'].forEach(function(k){
     if (data[k] && data[k].rows) totalRows += data[k].rows.length;
   });
   document.getElementById('stCount').textContent = totalRows;
 
   dpRenderGiling(data.giling);
   dpRenderWIP(data.wip);
-  dpRenderThermo(data.thermo);
+  dpRenderThermo(data.hasilThermo);
   dpRenderExtruder(data.extruder);
   dpRenderTotalSheet(data.totalSheet);
   dpRenderTehnik(data.tehnik);
