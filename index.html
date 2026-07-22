@@ -194,7 +194,7 @@
   <div id="tabs">
     <div class="tab active" data-tab="giling" onclick="dpSwitchTab('giling')">Giling</div>
     <div class="tab" data-tab="wip" onclick="dpSwitchTab('wip')">WIP</div>
-    <div class="tab" data-tab="hasilThermo" onclick="dpSwitchTab('hasilThermo')">Hasil Thermo</div>
+    <div class="tab" data-tab="thermo" onclick="dpSwitchTab('thermo')">Thermo</div>
     <div class="tab" data-tab="extruder" onclick="dpSwitchTab('extruder')">Extruder</div>
     <div class="tab" data-tab="totalSheet" onclick="dpSwitchTab('totalSheet')">Total Sheet</div>
     <div class="tab" data-tab="tehnik" onclick="dpSwitchTab('tehnik')">Tehnik</div>
@@ -203,7 +203,7 @@
   <div id="content">
     <div class="section active" id="sec-giling"></div>
     <div class="section" id="sec-wip"></div>
-    <div class="section" id="sec-hasilThermo"></div>
+    <div class="section" id="sec-thermo"></div>
     <div class="section" id="sec-extruder"></div>
     <div class="section" id="sec-totalSheet"></div>
     <div class="section" id="sec-tehnik"></div>
@@ -348,14 +348,14 @@ function dpApplyFilter(){
 function dpRenderAll(data){
   document.getElementById('stTime').textContent = new Date(data.generatedAt).toLocaleString('id-ID');
   var totalRows = 0;
-  ['giling','wip','hasilThermo','extruder','totalSheet','tehnik'].forEach(function(k){
+  ['giling','wip','thermo','extruder','totalSheet','tehnik'].forEach(function(k){
     if (data[k] && data[k].rows) totalRows += data[k].rows.length;
   });
   document.getElementById('stCount').textContent = totalRows;
 
   dpRenderGiling(data.giling);
   dpRenderWIP(data.wip);
-  dpRenderThermo(data.hasilThermo);
+  dpRenderThermo(data.thermo);
   dpRenderExtruder(data.extruder);
   dpRenderTotalSheet(data.totalSheet);
   dpRenderTehnik(data.tehnik);
