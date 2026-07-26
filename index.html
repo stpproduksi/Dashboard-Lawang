@@ -320,14 +320,13 @@ function dpFetchData(filters, onSuccess, onError){
   }
   // Mode luar Apps Script (GitHub Pages, dsb) -> ambil data lewat Web App
   var qs = [];
-  if (filters.startDate) qs.push('startDate=' + encodeURIComponent(filters.startDate));
-  if (filters.endDate) qs.push('endDate=' + encodeURIComponent(filters.endDate));
-  if (filters.days) qs.push('days=' + encodeURIComponent(filters.days.join(',')));
-  qs.push('action=dashboard');
+if (filters.startDate) qs.push('startDate=' + encodeURIComponent(filters.startDate));
+if (filters.endDate) qs.push('endDate=' + encodeURIComponent(filters.endDate));
+if (filters.days) qs.push('days=' + encodeURIComponent(filters.days.join(',')));
+qs.push('action=dashboard');
 fetch(WEBAPP_URL + '?' + qs.join('&'))
-    .then(function(res){ return res.json(); })
-    .then(onSuccess)
-    .catch(onError);
+  .then(function(res){ return res.json(); })
+  .then(onSuccess)
 }
 
 function dpApplyFilter(){
