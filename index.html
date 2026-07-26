@@ -323,7 +323,8 @@ function dpFetchData(filters, onSuccess, onError){
   if (filters.startDate) qs.push('startDate=' + encodeURIComponent(filters.startDate));
   if (filters.endDate) qs.push('endDate=' + encodeURIComponent(filters.endDate));
   if (filters.days) qs.push('days=' + encodeURIComponent(filters.days.join(',')));
-  fetch(WEBAPP_URL + '?' + qs.join('&'))
+  qs.push('action=dashboard');
+fetch(WEBAPP_URL + '?' + qs.join('&'))
     .then(function(res){ return res.json(); })
     .then(onSuccess)
     .catch(onError);
