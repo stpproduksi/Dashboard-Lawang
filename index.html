@@ -377,13 +377,10 @@ function dpTopNPlusOther(rows, valueKey, labelKey, n){
 
 var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby56ZoYGB_Pvi8E9rVUdbF2bwpBjYnjOaR2H3xCf6erZnceUrkIpGfqOKemg8EzZiIIRA/exec';
 
-function dpFetchData(filters, onSuccess, onError){
+function dpFetchData(filters, onSuccess, onError, isRetry){
   var runningInsideAppsScript = (typeof google !== 'undefined' && google.script && google.script.run);
   if (runningInsideAppsScript) {
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onError)
-      .dpGetDashboardData(filters);
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onError).dpGetDashboardData(filters);
     return;
   }
   var qs = ['action=dashboard'];
@@ -393,7 +390,13 @@ function dpFetchData(filters, onSuccess, onError){
   fetch(WEBAPP_URL + '?' + qs.join('&'))
     .then(function(res){ return res.json(); })
     .then(onSuccess)
-    .catch(onError);
+    .catch(function(err){
+      if (!isRetry) {
+        dpFetchData(filters, onSuccess, onError, true);
+      } else {
+        onError(err);
+      }
+    });
 }
 
 function dpApplyFilter(){
@@ -600,7 +603,14 @@ function dpRenderTehnik(d){
   }
   el.innerHTML = html;
 }
-
+(function dpSetDefaultRange(){
+  var now = new Date();
+  var first = new Date(now.getFullYear(), now.getMonth(), 1);
+  function toISO(d){ return d.toISOString().slice(0,10); }
+  document.getElementById('startDate').value = toISO(first);
+  document.getElementById('endDate').value = toISO(now);
+})();
+dpApplyFilter();
 dpApplyFilter();
 </script>
 </body>
