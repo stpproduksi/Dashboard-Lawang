@@ -252,6 +252,38 @@
 var PALETTE = ['#FF7A45','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F59E0B','#22C55E','#EF4444','#64748B'];
 var MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
+/* ---------------------------------------------------------------------
+ *  Toggle mode grafik tren: 'filter' (ikut filter tanggal/bulan aktif)
+ *  atau 'all' (selalu seluruh histori). Tersimpan per section supaya
+ *  tiap tab bisa diatur independen. Data kedua mode sudah dikirim
+ *  sekaligus dari server (lihat *Trend.filtered / *Trend.all), jadi
+ *  pindah mode tidak perlu fetch ulang ke server.
+ * ------------------------------------------------------------------- */
+var dpTrendMode = { wip: 'filter', thermo: 'filter', trenTf: 'filter', extruder: 'filter', totalSheet: 'filter' };
+
+function dpToggleBtnStyle(active){
+  return 'padding:6px 12px;border-radius:8px;font-family:\'Space Grotesk\',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;border:1px solid ' + (active ? '#1F2433' : '#D7DCE6') + ';background:' + (active ? '#1F2433' : '#fff') + ';color:' + (active ? '#fff' : '#4B5468') + ';';
+}
+
+function dpTrendToggleHtml(section){
+  var isFilter = dpTrendMode[section] !== 'all';
+  return '<div style="display:flex; gap:6px; margin:6px 0 14px; flex-wrap:wrap;">' +
+    '<button onclick="dpSetTrendMode(\'' + section + '\',\'filter\')" style="' + dpToggleBtnStyle(isFilter) + '">Ikuti Filter</button>' +
+    '<button onclick="dpSetTrendMode(\'' + section + '\',\'all\')" style="' + dpToggleBtnStyle(!isFilter) + '">Selalu Semua Bulan</button>' +
+    '</div>';
+}
+
+function dpSetTrendMode(section, mode){
+  dpTrendMode[section] = mode;
+  if (!window.dpLastData) return;
+  var data = window.dpLastData;
+  if (section === 'wip') dpRenderWIP(data.wip, mode === 'all' ? data.wipTrend.all : data.wipTrend.filtered);
+  if (section === 'thermo') dpRenderThermo(data.thermo, mode === 'all' ? data.thermoTrend.all : data.thermoTrend.filtered);
+  if (section === 'trenTf') dpRenderTrenTf(mode === 'all' ? data.thermoTfPctTrend.all : data.thermoTfPctTrend.filtered);
+  if (section === 'extruder') dpRenderExtruder(data.extruder, mode === 'all' ? data.extruderTrend.all : data.extruderTrend.filtered);
+  if (section === 'totalSheet') dpRenderTotalSheet(data.totalSheet, mode === 'all' ? data.totalSheetTrend.all : data.totalSheetTrend.filtered);
+}
+
 function dpCurrentTabName(){
   var active = document.querySelector('.tab.active');
   return active ? active.textContent.trim().replace(/\s+/g,'-').toLowerCase() : 'dashboard';
@@ -454,7 +486,7 @@ function dpLineChartHtml(datasets, months, opts){
 function dpMiniLineChartHtml(title, values, months, threshold, opts){
   opts = opts || {};
   var dec = opts.decimals === undefined ? 2 : opts.decimals;
-  var unit = opts.unit || '%';
+  var unit = opts.unit !== undefined ? opts.unit : '%';
   var w = 300, h = 150, padL = 34, padR = 10, padT = 14, padB = 24;
   var innerW = w - padL - padR, innerH = h - padT - padB;
 
@@ -549,6 +581,7 @@ function dpApplyFilter(){
 }
 
 function dpRenderAll(data){
+  window.dpLastData = data;
   document.getElementById('stTime').textContent = new Date(data.generatedAt).toLocaleString('id-ID');
   var totalRows = 0;
   ['giling','wip','thermo','extruder','totalSheet','tehnik'].forEach(function(k){
@@ -557,11 +590,11 @@ function dpRenderAll(data){
   document.getElementById('stCount').textContent = totalRows;
 
   dpRenderGiling(data.giling);
-  dpRenderWIP(data.wip, data.wipTrend);
-  dpRenderThermo(data.thermo, data.thermoTrend);
-  dpRenderTrenTf(data.thermoTfPctTrend);
-  dpRenderExtruder(data.extruder, data.extruderTrend);
-  dpRenderTotalSheet(data.totalSheet, data.totalSheetTrend);
+  dpRenderWIP(data.wip, dpTrendMode.wip === 'all' ? data.wipTrend.all : data.wipTrend.filtered);
+  dpRenderThermo(data.thermo, dpTrendMode.thermo === 'all' ? data.thermoTrend.all : data.thermoTrend.filtered);
+  dpRenderTrenTf(dpTrendMode.trenTf === 'all' ? data.thermoTfPctTrend.all : data.thermoTfPctTrend.filtered);
+  dpRenderExtruder(data.extruder, dpTrendMode.extruder === 'all' ? data.extruderTrend.all : data.extruderTrend.filtered);
+  dpRenderTotalSheet(data.totalSheet, dpTrendMode.totalSheet === 'all' ? data.totalSheetTrend.all : data.totalSheetTrend.filtered);
   dpRenderTehnik(data.tehnik);
 }
 
@@ -617,12 +650,15 @@ function dpRenderWIP(d, trend){
     '<div class="chart-card"><h3>Bahan - 14 Hari Terakhir</h3>' + dpBarsHtml(barsBahan) + '</div>' +
     '</div>';
 
+  html += '<h2>Perkembangan per Bulan</h2>';
+  html += dpTrendToggleHtml('wip');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsW = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var bahanDs = { name: 'Total Bahan', color: '#14B8A6', values: trend.rows.map(function(r){ return r.bahan; }) };
     var wipDs = { name: 'Total WIP', color: '#8B5CF6', values: trend.rows.map(function(r){ return r.wip; }) };
-    html += '<h2>Perkembangan per Bulan</h2>';
     html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Bahan vs Total WIP per Bulan</h3>' + dpLineChartHtml([bahanDs, wipDs], monthsW) + '</div></div>';
+  } else {
+    html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
 
   html += '<h2>Rincian Harian</h2>';
@@ -653,13 +689,16 @@ function dpRenderThermo(d, trend){
   html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Percentage per Mesin TF (Tonase : Pemakaian Sheet) - merah = di bawah ' + s.threshold + '%</h3>' + dpBarsHtml(pctBars,2) + '</div></div>';
   html += '<div class="chart-row"><div class="chart-card"><h3>Kontribusi Tonase per Mesin TF</h3>' + dpDonutHtml(tonaseSlices,'Kg') + '</div></div>';
 
+  html += '<h2>Perkembangan per Bulan</h2>';
+  html += dpTrendToggleHtml('thermo');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsT = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var boxDs = { name: 'Total Box', color: '#3B82F6', values: trend.rows.map(function(r){ return r.box; }) };
     var tonaseDs = { name: 'Total Tonase', color: '#FF7A45', values: trend.rows.map(function(r){ return r.tonase; }) };
-    html += '<h2>Perkembangan per Bulan</h2>';
     html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Hasil Box per Bulan</h3>' + dpLineChartHtml([boxDs], monthsT) + '</div></div>';
     html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Tonase per Bulan</h3>' + dpLineChartHtml([tonaseDs], monthsT, {decimals:2}) + '</div></div>';
+  } else {
+    html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
 
   html += '<h2>Per Mesin TF</h2>';
@@ -686,14 +725,17 @@ function dpRenderThermo(d, trend){
  * ------------------------------------------------------------------- */
 function dpRenderTrenTf(trend){
   var el = document.getElementById('sec-trenTf');
+  var html = '<h2>Perkembangan % Tonase per Mesin TF (per Bulan)</h2>';
+  html += dpTrendToggleHtml('trenTf');
+
   if (!trend || trend.error || !trend.months || !trend.months.length || !trend.series || !trend.series.length){
-    el.innerHTML = '<div class="empty">Belum ada data % Tonase per TF untuk ditampilkan.</div>';
+    html += '<div class="empty">Tidak ada data % Tonase per TF untuk mode ini.</div>';
+    el.innerHTML = html;
     return;
   }
 
   var months = trend.months.map(function(m){ return dpMonthLabel(m); });
 
-  var html = '<h2>Perkembangan % Tonase per Mesin TF (per Bulan)</h2>';
   html += '<div class="note">Rumus: % Tonase = (Total Tonase &divide; Total Pemakaian Sheet) &times; 100%. Garis putus-putus merah = ambang batas ' + trend.threshold + '%. Titik hijau = di atas ambang, titik merah = di bawah ambang.</div>';
 
   html += '<div class="chart-row">';
@@ -746,12 +788,15 @@ function dpRenderExtruder(d, trend){
     '</div>';
   html += '<div class="note">% Baik = 100% - % BS Sayat - % BS Sheet - % Waste.</div>';
 
+  html += '<h2>Perkembangan per Bulan</h2>';
+  html += dpTrendToggleHtml('extruder');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsE = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var baikDs = { name: 'Hasil Sheet Baik', color: '#22C55E', values: trend.rows.map(function(r){ return r.baik; }) };
     var pemakaianDs = { name: 'Pemakaian (Total)', color: '#3B82F6', values: trend.rows.map(function(r){ return r.total; }) };
-    html += '<h2>Perkembangan per Bulan</h2>';
     html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Hasil Sheet Baik vs Pemakaian per Bulan</h3>' + dpLineChartHtml([baikDs, pemakaianDs], monthsE) + '</div></div>';
+  } else {
+    html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
 
   html += '<h2>Per Produk</h2>';
@@ -773,14 +818,17 @@ function dpRenderTotalSheet(d, trend){
   html += '<div class="stat-row"><div class="stat-card"><div class="k">Grand Total</div><div class="v accent">' + dpFmt(d.grandTotal) + '</div></div></div>';
   html += '<div class="chart-row"><div class="chart-card"><h3>Total per Extruder</h3>' + dpBarsHtml(bars) + '</div></div>';
 
+  html += '<h2>Perkembangan per Bulan (per Extruder)</h2>';
+  html += dpTrendToggleHtml('totalSheet');
   if (trend && !trend.error && trend.months && trend.months.length && trend.series && trend.series.length){
     var monthsS = trend.months.map(function(m){ return dpMonthLabel(m); });
-    html += '<h2>Perkembangan per Bulan (per Extruder)</h2>';
     html += '<div class="chart-row">';
     trend.series.forEach(function(s){
       html += dpMiniLineChartHtml(s.ext, s.values, monthsS, null, {decimals:0, unit:''});
     });
     html += '</div>';
+  } else {
+    html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
 
   html += '<table><thead><tr><th>Extruder</th><th>Shift 1</th><th>Shift 2</th><th>Shift 3</th><th>Total</th><th>% Kontribusi</th></tr></thead><tbody>';
