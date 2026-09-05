@@ -8,25 +8,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
-    --bg:#F5F7FB;
+    --bg:#F3F9FB;
     --card:#FFFFFF;
     --panel:#FFFFFF;
-    --line:#E7EAF1;
+    --line:#DCEEF2;
     --ink:#1F2433;
-    --mute:#7A8296;
+    --mute:#6B8894;
 
-    --c1:#FF7A45;
-    --c2:#14B8A6;
-    --c3:#8B5CF6;
-    --c4:#3B82F6;
-    --c5:#EC4899;
-    --c6:#F59E0B;
-    --c7:#22C55E;
-    --c8:#EF4444;
-    --c9:#64748B;
+    --c1:#0EA5E9; /* biru langit - Giling */
+    --c2:#10B981; /* emerald - WIP bahan */
+    --c3:#8B5CF6; /* ungu - WIP wip / thermo */
+    --c4:#6366F1; /* indigo - Extruder / Total Sheet */
+    --c5:#06B6D4; /* cyan/tosca - Thermo */
+    --c6:#F59E0B; /* amber - waste */
+    --c7:#22C55E; /* hijau - baik/ok */
+    --c8:#EF4444; /* merah - waste/downtime */
+    --c9:#64748B; /* abu - lainnya */
 
     --grad: linear-gradient(135deg, var(--c1), var(--c5));
-  }
+}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
   body{
@@ -92,7 +92,7 @@
     background:var(--grad); color:#fff; border:none; border-radius:9px; padding:11px 10px;
     font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12.5px;
     letter-spacing:.03em; text-transform:uppercase; cursor:pointer;
-    box-shadow:0 6px 14px -6px rgba(236,73,153,.55);
+    box-shadow:0 6px 14px -6px rgba(14,165,233,.55);
   }
   #btnApply:active{transform:translateY(1px);}
   #btnReset{
@@ -139,8 +139,8 @@
   .donut{ width:132px; height:132px; flex:none; position:relative; }
   .donut svg{ width:100%; height:100%; display:block; }
   .donut-hole{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:80px; height:80px; border-radius:50%; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .donut-hole .tot{ font-family:'Space Mono', monospace; font-weight:700; font-size:15px; }
-  .donut-hole .lbl{ font-size:9px; color:var(--mute); text-transform:uppercase; letter-spacing:.05em; }
+  .donut-hole .tot{ font-family:'Space Mono', monospace; font-weight:700; font-size:16.5px; color:var(--ink); }
+  .donut-hole .lbl{ font-size:9.5px; font-weight:700; color:#4B5468; text-transform:uppercase; letter-spacing:.05em; }
   .legend{ flex:1; min-width:140px; display:flex; flex-direction:column; gap:6px; }
   .legend-item{ display:flex; align-items:center; gap:7px; font-size:11.5px; }
   .legend-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
@@ -366,29 +366,30 @@ function dpGaugeHtml(pct, color, decimals){
   return '<div class="gauge"><div class="gauge-track"><div class="gauge-fill" style="width:' + p + '%;background:' + (color||'var(--c1)') + '"></div></div><div class="gauge-num">' + dpFmt(p,dec) + '%</div></div>';
 }
 
-function dpDonutHtml(slices, centerLabel){
+function dpDonutHtml(slices, centerLabel, centerDecimals){
+  centerDecimals = centerDecimals === undefined ? 2 : centerDecimals;
   var total = slices.reduce(function(s,x){ return s + (x.value||0); }, 0);
-  var r = 13;
+  var r = 12.5;
   var circumference = 2 * Math.PI * r;
   var offsetAcc = 0;
   var circles = slices.map(function(s){
     var pct = total > 0 ? (s.value/total*100) : 0;
     var dash = (pct/100*circumference);
     var gap = (circumference - dash);
-    var circle = '<circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="' + s.color + '" stroke-width="5" ' +
+    var circle = '<circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="' + s.color + '" stroke-width="6.5" ' +
       'stroke-dasharray="' + dash.toFixed(3) + ' ' + gap.toFixed(3) + '" stroke-dashoffset="' + (-offsetAcc).toFixed(3) + '"></circle>';
     offsetAcc += dash;
     return circle;
   }).join('');
   var svg = total > 0
     ? '<svg viewBox="0 0 36 36"><g transform="rotate(-90 18 18)">' + circles + '</g></svg>'
-    : '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="#EEF1F7" stroke-width="5"></circle></svg>';
+    : '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="#EEF1F7" stroke-width="6.5"></circle></svg>';
   var legend = slices.map(function(s){
     var pct = total > 0 ? (s.value/total*100) : 0;
-    return '<div class="legend-item"><div class="legend-dot" style="background:' + s.color + '"></div><div class="legend-name">' + s.label + '</div><div class="legend-pct">' + dpFmt(pct,2) + '%</div></div>';
+    return '<div class="legend-item"><div class="legend-dot" style="background:' + s.color + '; width:12px; height:12px;"></div><div class="legend-name" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + s.label + '</div><div class="legend-pct" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + dpFmt(pct,2) + '%</div></div>';
   }).join('');
   return '<div class="donut-wrap"><div class="donut">' + svg +
-    '<div class="donut-hole"><div class="tot">' + dpFmt(total) + '</div><div class="lbl">' + (centerLabel||'Total') + '</div></div>' +
+    '<div class="donut-hole"><div class="tot">' + dpFmt(total,centerDecimals) + '</div><div class="lbl">' + (centerLabel||'Total') + '</div></div>' +
     '</div><div class="legend">' + legend + '</div></div>';
 }
 
@@ -537,7 +538,7 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
     '</div>';
 }
 
-var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby56ZoYGB_Pvi8E9rVUdbF2bwpBjYnjOaR2H3xCf6erZnceUrkIpGfqOKemg8EzZiIIRA/exec';
+var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwLcFg0x0tzGsG8FhmBviv6wIW2TIJ78K6Qa3wKNF-JJEzw9U3OAaAJS_gzhQnQspsz/exec';
 
 function dpFetchData(filters, onSuccess, onError, isRetry){
   var runningInsideAppsScript = (typeof google !== 'undefined' && google.script && google.script.run);
@@ -814,26 +815,51 @@ function dpRenderTotalSheet(d, trend){
 
   var bars = d.rows.map(function(r, i){ return { label: 'Ext ' + r.ext, value: r.total, color: PALETTE[i % PALETTE.length] }; });
 
+  var capai = d.rows.filter(function(r){ return r.belowTarget === false; }).length;
+  var tidakCapai = d.rows.filter(function(r){ return r.belowTarget === true; }).length;
+  var tanpaTarget = d.rows.filter(function(r){ return r.belowTarget === null || r.belowTarget === undefined; }).length;
+  var statusSlices = [
+    { label: 'Capai Target', value: capai, color: '#22C55E' },
+    { label: 'Di Bawah Target', value: tidakCapai, color: '#EF4444' }
+  ];
+  if (tanpaTarget > 0) statusSlices.push({ label: 'Belum Ada Target', value: tanpaTarget, color: '#94A3B8' });
+
   var html = '<h2>Kontribusi per Extruder (Line) - Sheet TOTAL SHEET</h2>';
   html += '<div class="stat-row"><div class="stat-card"><div class="k">Grand Total</div><div class="v accent">' + dpFmt(d.grandTotal) + '</div></div></div>';
-  html += '<div class="chart-row"><div class="chart-card"><h3>Total per Extruder</h3>' + dpBarsHtml(bars) + '</div></div>';
+  html += '<div class="chart-row">' +
+    '<div class="chart-card"><h3>Total per Extruder</h3>' + dpBarsHtml(bars) + '</div>' +
+    '<div class="chart-card"><h3>Status Capaian Target per Extruder</h3>' + dpDonutHtml(statusSlices,'Ext',0) + '</div>' +
+    '</div>';
 
   html += '<h2>Perkembangan per Bulan (per Extruder)</h2>';
   html += dpTrendToggleHtml('totalSheet');
   if (trend && !trend.error && trend.months && trend.months.length && trend.series && trend.series.length){
     var monthsS = trend.months.map(function(m){ return dpMonthLabel(m); });
+    html += '<div class="note">Grafik di bawah ini menampilkan rata-rata per shift tiap bulan (bukan total mentah), supaya bisa dibandingkan langsung dengan target per shift. Garis putus-putus merah = target. Titik hijau = capai target, titik merah = di bawah target.</div>';
     html += '<div class="chart-row">';
     trend.series.forEach(function(s){
-      html += dpMiniLineChartHtml(s.ext, s.values, monthsS, null, {decimals:0, unit:''});
+      var titleS = s.ext + (s.target ? '' : ' (belum ada target)');
+      html += dpMiniLineChartHtml(titleS, s.values, monthsS, s.target || null, {decimals:0, unit:''});
     });
     html += '</div>';
   } else {
     html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
 
-  html += '<table><thead><tr><th>Extruder</th><th>Shift 1</th><th>Shift 2</th><th>Shift 3</th><th>Total</th><th>% Kontribusi</th></tr></thead><tbody>';
+  html += '<div class="note">% Capaian = (Rata-rata per Shift &divide; Target per Shift) &times; 100%. Sel merah = di bawah target. Extruder tanpa target terkonfigurasi ditampilkan "-".</div>';
+
+  html += '<table><thead><tr><th>Extruder</th><th>Shift 1</th><th>Shift 2</th><th>Shift 3</th><th>Total</th><th>% Kontribusi</th><th>Target/Shift</th><th>Rata2/Shift</th><th>% Capaian</th></tr></thead><tbody>';
   d.rows.forEach(function(r, i){
-    html += '<tr><td class="name">' + r.ext + '</td><td>' + dpFmt(r.shift1) + '</td><td>' + dpFmt(r.shift2) + '</td><td>' + dpFmt(r.shift3) + '</td><td>' + dpFmt(r.total) + '</td><td>' + dpGaugeHtml(r.pct, PALETTE[i % PALETTE.length]) + '</td></tr>';
+    var targetCell = (r.target !== null && r.target !== undefined) ? dpFmt(r.target,0) : '-';
+    var avgCell = dpFmt(r.avgPerShift,0);
+    var capaianCell;
+    if (r.pctTarget === null || r.pctTarget === undefined){
+      capaianCell = '<span style="color:var(--mute);">- (belum ada target)</span>';
+    } else {
+      var cls = r.belowTarget ? 'bad' : 'good';
+      capaianCell = '<span class="v ' + cls + '" style="font-size:12.5px;">' + dpFmt(r.pctTarget,1) + '%</span>';
+    }
+    html += '<tr><td class="name">' + r.ext + '</td><td>' + dpFmt(r.shift1) + '</td><td>' + dpFmt(r.shift2) + '</td><td>' + dpFmt(r.shift3) + '</td><td>' + dpFmt(r.total) + '</td><td>' + dpGaugeHtml(r.pct, PALETTE[i % PALETTE.length]) + '</td><td>' + targetCell + '</td><td>' + avgCell + '</td><td>' + capaianCell + '</td></tr>';
   });
   html += '</tbody></table>';
   el.innerHTML = html;
