@@ -187,14 +187,14 @@
   <div class="ctrl-group">
     <span class="ctrl-label">Rentang Tanggal</span>
     <div class="date-row">
-      <div><label>Dari</label><input type="date" id="startDate"></div>
-      <div><label>Sampai</label><input type="date" id="endDate"></div>
+      <div><label>Dari</label><input type="date" id="startDate" onchange="dpOnDateChange()"></div>
+      <div><label>Sampai</label><input type="date" id="endDate" onchange="dpOnDateChange()"></div>
     </div>
   </div>
 
   <div class="ctrl-group">
     <span class="ctrl-label">Bulan</span>
-    <select id="bulanFilter">
+    <select id="bulanFilter" onchange="dpOnBulanChange()">
       <option value="">Semua Bulan</option>
       <option value="1">Januari</option>
       <option value="2">Februari</option>
@@ -351,6 +351,27 @@ function dpResetFilter(){
   document.getElementById('startDate').value = '';
   document.getElementById('endDate').value = '';
   document.getElementById('bulanFilter').value = '';
+  dpApplyFilter();
+}
+
+/* ---------------------------------------------------------------------
+ *  Filter tanggal (Dari-Sampai) dan filter Bulan saling eksklusif -
+ *  kalau dipakai bersamaan hasilnya bisa kosong (mis. tanggal di bulan
+ *  berjalan tapi filter Bulan pilih bulan lain). Jadi begitu salah satu
+ *  diisi, yang lain otomatis dikosongkan.
+ * ------------------------------------------------------------------- */
+function dpOnBulanChange(){
+  if (document.getElementById('bulanFilter').value){
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+  }
+  dpApplyFilter();
+}
+
+function dpOnDateChange(){
+  if (document.getElementById('startDate').value || document.getElementById('endDate').value){
+    document.getElementById('bulanFilter').value = '';
+  }
   dpApplyFilter();
 }
 
@@ -522,6 +543,18 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
   var lastOk = threshold === undefined || threshold === null || (lastVal||0) >= threshold;
   var lastColor = lastOk ? '#16A34A' : '#DC2626';
 
+  var targetInfoHtml = '';
+  if (threshold !== undefined && threshold !== null){
+    var selisih = (lastVal||0) - threshold;
+    var selisihColor = selisih >= 0 ? '#16A34A' : '#DC2626';
+    var selisihText = selisih >= 0
+      ? '+' + dpFmt(selisih,dec) + unit + ' di atas target'
+      : dpFmt(selisih,dec) + unit + ' (kurang ' + dpFmt(Math.abs(selisih),dec) + unit + ')';
+    targetInfoHtml = '<div style="font-size:11px; font-weight:700; color:#4B5468; margin-bottom:8px;">' +
+      'Target: ' + dpFmt(threshold,dec) + unit + ' &middot; <span style="color:' + selisihColor + ';">' + selisihText + '</span>' +
+      '</div>';
+  }
+
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
     thresholdSvg +
     '<path d="' + pathD + '" fill="none" stroke="#2563EB" stroke-width="2.6"></path>' +
@@ -532,8 +565,9 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
     '<h3 style="color:var(--ink); font-size:13px;">' + title + '</h3>' +
     '<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">' +
       '<div style="font-family:\'Space Mono\',monospace; font-weight:700; font-size:22px; color:' + lastColor + ';">' + dpFmt(lastVal,dec) + unit + '</div>' +
-      '<div style="font-size:11px; font-weight:700; color:var(--ink);">bulan terakhir</div>' +
+      '<div style="font-size:11px; font-weight:700; color:var(--ink);">rata-rata ' + (months[months.length-1] || '') + ' saja</div>' +
     '</div>' +
+    targetInfoHtml +
     svg +
     '</div>';
 }
@@ -835,7 +869,7 @@ function dpRenderTotalSheet(d, trend){
   html += dpTrendToggleHtml('totalSheet');
   if (trend && !trend.error && trend.months && trend.months.length && trend.series && trend.series.length){
     var monthsS = trend.months.map(function(m){ return dpMonthLabel(m); });
-    html += '<div class="note">Grafik di bawah ini menampilkan rata-rata per shift tiap bulan (bukan total mentah), supaya bisa dibandingkan langsung dengan target per shift. Garis putus-putus merah = target. Titik hijau = capai target, titik merah = di bawah target.</div>';
+    html += '<div class="note">Grafik di bawah ini menampilkan rata-rata per shift TIAP BULAN sendiri-sendiri (satu titik = satu bulan), beda dari kolom "Rata2/Shift" di tabel bawah yang menggabungkan seluruh rentang filter jadi satu angka. Kalau bulan terakhir kelihatan rendah, kemungkinan karena bulan itu belum selesai (datanya baru sebagian). Garis putus-putus merah = target. Titik hijau = capai target, titik merah = di bawah target.</div>';
     html += '<div class="chart-row">';
     trend.series.forEach(function(s){
       var titleS = s.ext + (s.target ? '' : ' (belum ada target)');
