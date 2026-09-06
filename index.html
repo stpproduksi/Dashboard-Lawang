@@ -365,14 +365,12 @@ function dpOnBulanChange(){
     document.getElementById('startDate').value = '';
     document.getElementById('endDate').value = '';
   }
-  dpApplyFilter();
 }
 
 function dpOnDateChange(){
   if (document.getElementById('startDate').value || document.getElementById('endDate').value){
     document.getElementById('bulanFilter').value = '';
   }
-  dpApplyFilter();
 }
 
 function dpFmt(n, dec){
