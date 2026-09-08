@@ -127,6 +127,7 @@
   .stat-card .v.good{color:var(--c7);}
   .stat-card .v.bad{color:var(--c8);}
   .stat-card .v.accent{color:var(--c1);}
+  .v.warn{color:#D97706;}
 
   .chart-row{ display:flex; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
   .chart-card{
@@ -570,6 +571,73 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
     '</div>';
 }
 
+/* ---------------------------------------------------------------------
+ *  Mini line chart 3 WARNA (khusus Tren TF): merah / kuning / hijau
+ *  berdasarkan 2 batas (merahBatas, hijauBatas), bukan cuma 1 ambang
+ *  batas hijau/merah seperti dpMiniLineChartHtml biasa.
+ *  - nilai < merahBatas       -> merah
+ *  - merahBatas s.d. sebelum hijauBatas -> kuning
+ *  - nilai >= hijauBatas      -> hijau
+ * ------------------------------------------------------------------- */
+function dpWarnaBand3_(v, merahBatas, hijauBatas){
+  if ((v||0) < merahBatas) return '#DC2626';
+  if ((v||0) < hijauBatas) return '#D97706';
+  return '#16A34A';
+}
+
+function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, opts){
+  opts = opts || {};
+  var dec = opts.decimals === undefined ? 2 : opts.decimals;
+  var unit = opts.unit !== undefined ? opts.unit : '%';
+  var w = 300, h = 150, padL = 34, padR = 10, padT = 14, padB = 24;
+  var innerW = w - padL - padR, innerH = h - padT - padB;
+
+  var n = values.length;
+  var maxCandidate = values.reduce(function(m,v){ return Math.max(m, v||0); }, hijauBatas || 0);
+  var maxVal = maxCandidate > 0 ? maxCandidate * 1.15 : 100;
+
+  function xPos(i){ return n <= 1 ? padL + innerW/2 : padL + (i/(n-1))*innerW; }
+  function yPos(v){ return padT + innerH - ((v||0)/maxVal)*innerH; }
+
+  var merahY = yPos(merahBatas);
+  var hijauY = yPos(hijauBatas);
+  var bandSvg =
+    '<line x1="' + padL + '" y1="' + merahY.toFixed(1) + '" x2="' + (w-padR) + '" y2="' + merahY.toFixed(1) + '" stroke="#DC2626" stroke-width="1.6" stroke-dasharray="5 3"></line>' +
+    '<text x="' + (w-padR) + '" y="' + (merahY-4).toFixed(1) + '" text-anchor="end" font-size="9" font-weight="700" fill="#DC2626" font-family="Space Mono, monospace">' + merahBatas + unit + '</text>' +
+    '<line x1="' + padL + '" y1="' + hijauY.toFixed(1) + '" x2="' + (w-padR) + '" y2="' + hijauY.toFixed(1) + '" stroke="#16A34A" stroke-width="1.6" stroke-dasharray="5 3"></line>' +
+    '<text x="' + (w-padR) + '" y="' + (hijauY-4).toFixed(1) + '" text-anchor="end" font-size="9" font-weight="700" fill="#16A34A" font-family="Space Mono, monospace">' + hijauBatas + unit + '</text>';
+
+  var pathD = values.map(function(v,i){ return (i===0?'M':'L') + xPos(i).toFixed(1) + ',' + yPos(v).toFixed(1); }).join(' ');
+  var dots = values.map(function(v,i){
+    var color = dpWarnaBand3_(v, merahBatas, hijauBatas);
+    return '<circle cx="' + xPos(i).toFixed(1) + '" cy="' + yPos(v).toFixed(1) + '" r="4.2" fill="' + color + '" stroke="#fff" stroke-width="1.4"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></circle>';
+  }).join('');
+
+  var xLabels = months.map(function(m,i){
+    var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
+    var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
+    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#3A4356" font-family="Space Mono, monospace">' + m + '</text>';
+  }).join('');
+
+  var lastVal = values[values.length - 1];
+  var lastColor = dpWarnaBand3_(lastVal, merahBatas, hijauBatas);
+
+  var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
+    bandSvg +
+    '<path d="' + pathD + '" fill="none" stroke="#2563EB" stroke-width="2.6"></path>' +
+    dots + xLabels +
+    '</svg>';
+
+  return '<div class="chart-card" style="flex:1 1 260px;">' +
+    '<h3 style="color:var(--ink); font-size:13px;">' + title + '</h3>' +
+    '<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">' +
+      '<div style="font-family:\'Space Mono\',monospace; font-weight:700; font-size:22px; color:' + lastColor + ';">' + dpFmt(lastVal,dec) + unit + '</div>' +
+      '<div style="font-size:11px; font-weight:700; color:var(--ink);">rata-rata ' + (months[months.length-1] || '') + ' saja</div>' +
+    '</div>' +
+    svg +
+    '</div>';
+}
+
 var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwLcFg0x0tzGsG8FhmBviv6wIW2TIJ78K6Qa3wKNF-JJEzw9U3OAaAJS_gzhQnQspsz/exec';
 
 function dpFetchData(filters, onSuccess, onError, isRetry){
@@ -768,12 +836,15 @@ function dpRenderTrenTf(trend){
   }
 
   var months = trend.months.map(function(m){ return dpMonthLabel(m); });
+  var merahBatas = trend.merahBatas;
+  var hijauBatas = trend.hijauBatas;
 
-  html += '<div class="note">Rumus: % Tonase = (Total Tonase &divide; Total Pemakaian Sheet) &times; 100%. Garis putus-putus merah = ambang batas ' + trend.threshold + '%. Titik hijau = di atas ambang, titik merah = di bawah ambang.</div>';
+  html += '<div class="note">Rumus: % Tonase = (Total Tonase &divide; Total Pemakaian Sheet) &times; 100%. ' +
+    'Merah = di bawah ' + merahBatas + '%, Kuning = ' + merahBatas + '% - ' + dpFmt(hijauBatas-0.01,2) + '%, Hijau = ' + hijauBatas + '% ke atas.</div>';
 
   html += '<div class="chart-row">';
   trend.series.forEach(function(s){
-    html += dpMiniLineChartHtml(s.tf, s.values, months, trend.threshold, {decimals:2, unit:'%'});
+    html += dpMiniLineChartHtml3_(s.tf, s.values, months, merahBatas, hijauBatas, {decimals:2, unit:'%'});
   });
   html += '</div>';
 
@@ -785,7 +856,7 @@ function dpRenderTrenTf(trend){
     html += '<tr><td class="name">' + dpMonthLabel(m) + '</td>';
     trend.series.forEach(function(s){
       var val = s.values[mi];
-      var cls = val < trend.threshold ? 'bad' : 'good';
+      var cls = val < merahBatas ? 'bad' : (val < hijauBatas ? 'warn' : 'good');
       html += '<td class="v ' + cls + '" style="font-size:12px;">' + dpFmt(val,2) + '%</td>';
     });
     html += '</tr>';
