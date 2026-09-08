@@ -127,6 +127,7 @@
   .stat-card .v.good{color:var(--c7);}
   .stat-card .v.bad{color:var(--c8);}
   .stat-card .v.accent{color:var(--c1);}
+  .stat-card .v.warn{color:#D97706;}
   .v.warn{color:#D97706;}
 
   .chart-row{ display:flex; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
@@ -777,17 +778,21 @@ function dpRenderThermo(d, trend){
   if (dpErrorOrEmpty(el, d, 'Tidak ada data HASIL THERMO pada rentang filter ini.')) return;
 
   var s = d.summary;
-  var pctBars = d.rows.map(function(r){ return { label: r.tf, value: r.pct, color: r.low ? '#EF4444' : '#3B82F6' }; });
+  var merahBatas = s.merahBatas;
+  var hijauBatas = s.hijauBatas;
+  var pctBars = d.rows.map(function(r){ return { label: r.tf, value: r.pct, color: dpWarnaBand3_(r.pct, merahBatas, hijauBatas) }; });
   var tonaseSlices = d.rows.map(function(r,i){ return { label: r.tf, value: r.tonase, color: PALETTE[i % PALETTE.length] }; });
+
+  var grandCls = s.pct < merahBatas ? 'bad' : (s.pct < hijauBatas ? 'warn' : 'good');
 
   var html = '<h2>Ringkasan - Sheet HASIL THERMO</h2>';
   html += '<div class="stat-row">' +
     '<div class="stat-card"><div class="k">Total Sheet Naik</div><div class="v">' + dpFmt(s.sheetNaik) + '</div></div>' +
     '<div class="stat-card"><div class="k">Total Pemakaian Sheet</div><div class="v">' + dpFmt(s.pemakaianSheet) + '</div></div>' +
     '<div class="stat-card"><div class="k">Total Tonase</div><div class="v accent">' + dpFmt(s.tonase,2) + '</div></div>' +
-    '<div class="stat-card"><div class="k">% Tonase / Pemakaian Sheet (Grand)</div><div class="v ' + (s.low ? 'bad' : 'good') + '">' + dpFmt(s.pct,2) + '%</div></div>' +
+    '<div class="stat-card"><div class="k">% Tonase / Pemakaian Sheet (Grand)</div><div class="v ' + grandCls + '">' + dpFmt(s.pct,2) + '%</div></div>' +
     '</div>';
-  html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Percentage per Mesin TF (Tonase : Pemakaian Sheet) - merah = di bawah ' + s.threshold + '%</h3>' + dpBarsHtml(pctBars,2) + '</div></div>';
+  html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Percentage per Mesin TF (Tonase : Pemakaian Sheet) - Merah &lt; ' + merahBatas + '%, Kuning ' + merahBatas + '-' + dpFmt(hijauBatas-0.01,2) + '%, Hijau &ge; ' + hijauBatas + '%</h3>' + dpBarsHtml(pctBars,2) + '</div></div>';
   html += '<div class="chart-row"><div class="chart-card"><h3>Kontribusi Tonase per Mesin TF</h3>' + dpDonutHtml(tonaseSlices,'Kg') + '</div></div>';
 
   html += '<h2>Perkembangan per Bulan</h2>';
@@ -805,15 +810,15 @@ function dpRenderThermo(d, trend){
   html += '<h2>Per Mesin TF</h2>';
   html += '<table><thead><tr><th>TF</th><th>Sheet Naik</th><th>Pemakaian Sheet</th><th>Box</th><th>Pcs</th><th>Tonase</th><th>Gram</th><th>BS Skalaton</th><th>BS Sheet</th><th>Waste</th><th>%</th></tr></thead><tbody>';
   d.rows.forEach(function(r){
-    html += '<tr><td class="name">' + r.tf + '</td><td>' + dpFmt(r.sheetNaik) + '</td><td>' + dpFmt(r.pemakaianSheet) + '</td><td>' + dpFmt(r.box) + '</td><td>' + dpFmt(r.pcs) + '</td><td>' + dpFmt(r.tonase,2) + '</td><td>' + dpFmt(r.gram,2) + '</td><td>' + dpFmt(r.bsSkalaton,2) + '</td><td>' + dpFmt(r.bsSheet,2) + '</td><td>' + dpFmt(r.waste,2) + '</td><td>' + dpGaugeHtml(r.pct, r.low ? '#EF4444' : '#3B82F6') + '</td></tr>';
+    html += '<tr><td class="name">' + r.tf + '</td><td>' + dpFmt(r.sheetNaik) + '</td><td>' + dpFmt(r.pemakaianSheet) + '</td><td>' + dpFmt(r.box) + '</td><td>' + dpFmt(r.pcs) + '</td><td>' + dpFmt(r.tonase,2) + '</td><td>' + dpFmt(r.gram,2) + '</td><td>' + dpFmt(r.bsSkalaton,2) + '</td><td>' + dpFmt(r.bsSheet,2) + '</td><td>' + dpFmt(r.waste,2) + '</td><td>' + dpGaugeHtml(r.pct, dpWarnaBand3_(r.pct, merahBatas, hijauBatas)) + '</td></tr>';
   });
-  html += '<tr style="font-weight:700;background:#FAFBFD;"><td class="name">Grand Total</td><td>' + dpFmt(s.sheetNaik) + '</td><td>' + dpFmt(s.pemakaianSheet) + '</td><td>' + dpFmt(s.box) + '</td><td>' + dpFmt(s.pcs) + '</td><td>' + dpFmt(s.tonase,2) + '</td><td>' + dpFmt(s.gram,2) + '</td><td>' + dpFmt(s.bsSkalaton,2) + '</td><td>' + dpFmt(s.bsSheet,2) + '</td><td>' + dpFmt(s.waste,2) + '</td><td>' + dpGaugeHtml(s.pct, s.low ? '#EF4444' : '#3B82F6') + '</td></tr>';
+  html += '<tr style="font-weight:700;background:#FAFBFD;"><td class="name">Grand Total</td><td>' + dpFmt(s.sheetNaik) + '</td><td>' + dpFmt(s.pemakaianSheet) + '</td><td>' + dpFmt(s.box) + '</td><td>' + dpFmt(s.pcs) + '</td><td>' + dpFmt(s.tonase,2) + '</td><td>' + dpFmt(s.gram,2) + '</td><td>' + dpFmt(s.bsSkalaton,2) + '</td><td>' + dpFmt(s.bsSheet,2) + '</td><td>' + dpFmt(s.waste,2) + '</td><td>' + dpGaugeHtml(s.pct, dpWarnaBand3_(s.pct, merahBatas, hijauBatas)) + '</td></tr>';
   html += '</tbody></table>';
 
   html += '<h2>Per Produk</h2>';
   html += '<table><thead><tr><th>Produk</th><th>Sheet Naik</th><th>Pemakaian Sheet</th><th>Box</th><th>Pcs</th><th>Tonase</th><th>Gram</th><th>BS Skalaton</th><th>BS Sheet</th><th>Waste</th><th>%</th></tr></thead><tbody>';
   (d.rowsByProduk || []).forEach(function(r){
-    html += '<tr><td class="name">' + r.produk + '</td><td>' + dpFmt(r.sheetNaik) + '</td><td>' + dpFmt(r.pemakaianSheet) + '</td><td>' + dpFmt(r.box) + '</td><td>' + dpFmt(r.pcs) + '</td><td>' + dpFmt(r.tonase,2) + '</td><td>' + dpFmt(r.gram,2) + '</td><td>' + dpFmt(r.bsSkalaton,2) + '</td><td>' + dpFmt(r.bsSheet,2) + '</td><td>' + dpFmt(r.waste,2) + '</td><td>' + dpGaugeHtml(r.pct, r.low ? '#EF4444' : '#3B82F6') + '</td></tr>';
+    html += '<tr><td class="name">' + r.produk + '</td><td>' + dpFmt(r.sheetNaik) + '</td><td>' + dpFmt(r.pemakaianSheet) + '</td><td>' + dpFmt(r.box) + '</td><td>' + dpFmt(r.pcs) + '</td><td>' + dpFmt(r.tonase,2) + '</td><td>' + dpFmt(r.gram,2) + '</td><td>' + dpFmt(r.bsSkalaton,2) + '</td><td>' + dpFmt(r.bsSheet,2) + '</td><td>' + dpFmt(r.waste,2) + '</td><td>' + dpGaugeHtml(r.pct, dpWarnaBand3_(r.pct, merahBatas, hijauBatas)) + '</td></tr>';
   });
   html += '</tbody></table>';
   el.innerHTML = html;
