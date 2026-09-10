@@ -876,7 +876,7 @@ function dpRenderExtruder(d, trend){
 
   var s = d.summary;
   var slices = [
-    { label: 'Baik', value: Math.max(0, s.total * s.pctBaik/100), color: '#22C55E' },
+    { label: 'Hasil Sheet (Baik)', value: Math.max(0, s.totalCampuran * s.pctBaik/100), color: '#22C55E' },
     { label: 'BS Sayat', value: s.bsSayat, color: '#EF4444' },
     { label: 'BS Sheet', value: s.bsSheet, color: '#F59E0B' },
     { label: 'Waste', value: s.waste, color: '#EC4899' }
@@ -886,16 +886,22 @@ function dpRenderExtruder(d, trend){
   var html = '<h2>Ringkasan - Sheet EXTRUDER</h2>';
   html += '<div class="stat-row">' +
     '<div class="stat-card"><div class="k">Total Sheet</div><div class="v accent">' + dpFmt(s.total) + '</div></div>' +
-    '<div class="stat-card"><div class="k">% BS Sayat</div><div class="v bad">' + dpFmt(s.pctBsSayat,2) + '%</div></div>' +
+    '<div class="stat-card"><div class="k">Total Campuran (=Total+Sayat+Sheet+Waste)</div><div class="v accent">' + dpFmt(s.totalCampuran) + '</div></div>' +
+    '<div class="stat-card"><div class="k">BS Sayat (Qty)</div><div class="v bad">' + dpFmt(s.bsSayat) + '</div></div>' +
+    '<div class="stat-card"><div class="k">BS Sheet (Qty)</div><div class="v bad">' + dpFmt(s.bsSheet) + '</div></div>' +
+    '<div class="stat-card"><div class="k">Waste (Qty)</div><div class="v bad">' + dpFmt(s.waste,2) + '</div></div>' +
+    '</div>';
+  html += '<div class="stat-row">' +
+    '<div class="stat-card"><div class="k">% BS Sayat (tetap)</div><div class="v bad">' + dpFmt(s.pctBsSayat,2) + '%</div></div>' +
     '<div class="stat-card"><div class="k">% BS Sheet</div><div class="v bad">' + dpFmt(s.pctBsSheet,2) + '%</div></div>' +
     '<div class="stat-card"><div class="k">% Waste</div><div class="v bad">' + dpFmt(s.pctWaste,2) + '%</div></div>' +
-    '<div class="stat-card"><div class="k">% Baik</div><div class="v good">' + dpFmt(s.pctBaik,2) + '%</div></div>' +
+    '<div class="stat-card"><div class="k">% Hasil Sheet (Baik)</div><div class="v good">' + dpFmt(s.pctBaik,2) + '%</div></div>' +
     '</div>';
+  html += '<div class="note">Total Campuran = Total Sheet + BS Sayat + BS Sheet + Waste = 100%. % BS Sayat selalu tetap ' + dpFmt(s.pctBsSayat,0) + '% (bukan dari data). % Hasil Sheet = (100% - % BS Sayat) - % BS Sheet - % Waste.</div>';
   html += '<div class="chart-row">' +
     '<div class="chart-card"><h3>Komposisi Hasil (Baik / BS Sayat / BS Sheet / Waste)</h3>' + dpDonutHtml(slices,'Total') + '</div>' +
     '<div class="chart-card"><h3>Total per Produk</h3>' + dpBarsHtml(topTotal) + '</div>' +
     '</div>';
-  html += '<div class="note">% Baik = 100% - % BS Sayat - % BS Sheet - % Waste.</div>';
 
   html += '<h2>Perkembangan per Bulan</h2>';
   html += dpTrendToggleHtml('extruder');
