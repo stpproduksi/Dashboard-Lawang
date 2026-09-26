@@ -160,7 +160,7 @@
   .chart-card h3{ margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); font-weight:700;}
 
   .donut-wrap{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-  .donut{ width:132px; height:132px; flex:none; position:relative; }
+  .donut{ width:190px; height:135px; flex:none; position:relative; }
   .donut svg{ width:100%; height:100%; display:block; }
   .donut-hole{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:80px; height:80px; border-radius:50%; background:var(--card2); display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .donut-hole .tot{ font-family:'Space Mono', monospace; font-weight:700; font-size:16.5px; color:var(--ink); }
@@ -175,7 +175,7 @@
   .bar-row{ display:flex; align-items:center; gap:10px; }
   .bar-name{ width:110px; font-size:11.5px; color:var(--ink); flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .bar-track{ flex:1; height:14px; background:#1B2438; border-radius:7px; overflow:hidden; }
-  .bar-fill{ height:100%; border-radius:7px 0 0 7px; transition:width .5s ease; }
+  .bar-fill{ height:100%; border-radius:7px 0 0 7px; transition:width .5s ease; background-image:linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 45%, rgba(0,0,0,.22) 100%) !important; background-blend-mode:overlay !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 2px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.35); }
   .bar-val{ width:64px; text-align:right; font-family:'Space Mono', monospace; font-size:11px; color:var(--mute); flex:none; }
 
   table{width:100%; border-collapse:collapse; background:var(--card); border-radius:12px; overflow:hidden; border:1px solid var(--line);}
@@ -190,7 +190,7 @@
 
   .gauge{ display:flex; align-items:center; gap:8px; min-width:150px; }
   .gauge-track{ position:relative; flex:1; height:9px; background:#1B2438; border-radius:5px; overflow:hidden; }
-  .gauge-fill{ height:100%; border-radius:5px 0 0 5px; width:0%; transition:width .5s ease; }
+  .gauge-fill{ height:100%; border-radius:5px 0 0 5px; width:0%; transition:width .5s ease; background-image:linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 45%, rgba(0,0,0,.22) 100%) !important; background-blend-mode:overlay !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 1px rgba(0,0,0,.3); }
   .gauge-num{ font-family:'Space Mono', monospace; font-size:11px; width:44px; text-align:right; color:var(--ink); }
 
   .section h2{ font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--mute); margin:22px 0 8px; }
@@ -283,6 +283,40 @@
 
 <script>
 var PALETTE = ['#FF7A45','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F59E0B','#22C55E','#EF4444','#64748B'];
+
+/* ---------------------------------------------------------------------
+ *  Terangkan/gelapkan warna hex - dipakai untuk sisi/atas bentuk 3D
+ *  (donat & kolom). amt positif = lebih terang, negatif = lebih gelap.
+ * ------------------------------------------------------------------- */
+function dp3dShade_(hex, amt){
+  var c = String(hex).replace('#','');
+  if (c.length === 3){ c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; }
+  var num = parseInt(c, 16);
+  if (isNaN(num)) return hex;
+  var r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+  function adj(ch){
+    var v = amt >= 0 ? ch + (255-ch)*(amt/100) : ch + ch*(amt/100);
+    return Math.max(0, Math.min(255, Math.round(v)));
+  }
+  r = adj(r); g = adj(g); b = adj(b);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+var dpDonutSeq_ = 0;
+
+/* ---------------------------------------------------------------------
+ *  Satu kolom sebagai kotak 3D (sisi depan + atas + samping kanan),
+ *  dipakai oleh grafik kolom Tren Ext & Tren TF.
+ * ------------------------------------------------------------------- */
+function dp3dColumnHtml_(x, yTop, barW, yBottom, color){
+  var dx = 5, dy = -5;
+  var front = 'M' + x.toFixed(1) + ',' + yTop.toFixed(1) + ' L' + (x+barW).toFixed(1) + ',' + yTop.toFixed(1) + ' L' + (x+barW).toFixed(1) + ',' + yBottom.toFixed(1) + ' L' + x.toFixed(1) + ',' + yBottom.toFixed(1) + ' Z';
+  var top = 'M' + x.toFixed(1) + ',' + yTop.toFixed(1) + ' L' + (x+dx).toFixed(1) + ',' + (yTop+dy).toFixed(1) + ' L' + (x+barW+dx).toFixed(1) + ',' + (yTop+dy).toFixed(1) + ' L' + (x+barW).toFixed(1) + ',' + yTop.toFixed(1) + ' Z';
+  var side = 'M' + (x+barW).toFixed(1) + ',' + yTop.toFixed(1) + ' L' + (x+barW+dx).toFixed(1) + ',' + (yTop+dy).toFixed(1) + ' L' + (x+barW+dx).toFixed(1) + ',' + (yBottom+dy).toFixed(1) + ' L' + (x+barW).toFixed(1) + ',' + yBottom.toFixed(1) + ' Z';
+  return '<path d="' + side + '" fill="' + dp3dShade_(color,-30) + '"></path>' +
+    '<path d="' + front + '" fill="' + color + '"></path>' +
+    '<path d="' + top + '" fill="' + dp3dShade_(color,35) + '"></path>';
+}
 var MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
 /* ---------------------------------------------------------------------
@@ -422,28 +456,61 @@ function dpGaugeHtml(pct, color, decimals){
 function dpDonutHtml(slices, centerLabel, centerDecimals){
   centerDecimals = centerDecimals === undefined ? 2 : centerDecimals;
   var total = slices.reduce(function(s,x){ return s + (x.value||0); }, 0);
-  var r = 12.5;
+
+  var vbW = 220, vbH = 150;
+  var cx = 110, cyTop = 58;
+  var r = 58, strokeW = 36;
+  var squash = 0.5, depth = 26;
   var circumference = 2 * Math.PI * r;
+
+  if (total <= 0){
+    var emptyRing = '<circle cx="' + cx + '" cy="' + cyTop + '" r="' + r + '" fill="transparent" stroke="#26304A" stroke-width="' + strokeW + '"></circle>';
+    var emptySvg = '<svg viewBox="0 0 ' + vbW + ' ' + vbH + '"><g transform="translate(' + cx + ',' + cyTop + ') scale(1,' + squash + ') translate(-' + cx + ',-' + cyTop + ')">' + emptyRing + '</g></svg>';
+    return '<div class="donut-wrap"><div class="donut">' + emptySvg + '</div><div class="legend"><div class="empty">Belum ada data.</div></div></div>';
+  }
+
   var offsetAcc = 0;
-  var circles = slices.map(function(s){
-    var pct = total > 0 ? (s.value/total*100) : 0;
-    var dash = (pct/100*circumference);
+  var fracAcc = 0;
+  var wallArcs = '', topArcs = '', labels = '';
+
+  slices.forEach(function(s){
+    var pct = (s.value||0)/total*100;
+    var frac = pct/100;
+    var dash = (frac*circumference);
     var gap = (circumference - dash);
-    var circle = '<circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="' + s.color + '" stroke-width="6.5" ' +
-      'stroke-dasharray="' + dash.toFixed(3) + ' ' + gap.toFixed(3) + '" stroke-dashoffset="' + (-offsetAcc).toFixed(3) + '"></circle>';
+    var dashOffset = (-offsetAcc).toFixed(3);
+
+    wallArcs += '<circle cx="' + cx + '" cy="' + cyTop + '" r="' + r + '" fill="transparent" stroke="' + dp3dShade_(s.color,-32) + '" stroke-width="' + strokeW + '" ' +
+      'stroke-dasharray="' + dash.toFixed(3) + ' ' + gap.toFixed(3) + '" stroke-dashoffset="' + dashOffset + '"></circle>';
+    topArcs += '<circle cx="' + cx + '" cy="' + cyTop + '" r="' + r + '" fill="transparent" stroke="' + s.color + '" stroke-width="' + strokeW + '" ' +
+      'stroke-dasharray="' + dash.toFixed(3) + ' ' + gap.toFixed(3) + '" stroke-dashoffset="' + dashOffset + '"></circle>';
+
+    if (pct >= 4.5){
+      var midFrac = fracAcc + frac/2;
+      var theta = midFrac * 2 * Math.PI;
+      var lx = cx + r*Math.sin(theta);
+      var ly = cyTop - r*Math.cos(theta)*squash;
+      labels += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" ' +
+        'font-size="15" font-weight="700" font-family="Space Grotesk, sans-serif" fill="#fff" stroke="rgba(0,0,0,.55)" stroke-width="3.2" paint-order="stroke">' +
+        dpFmt(pct,1) + '%</text>';
+    }
+
     offsetAcc += dash;
-    return circle;
-  }).join('');
-  var svg = total > 0
-    ? '<svg viewBox="0 0 36 36"><g transform="rotate(-90 18 18)">' + circles + '</g></svg>'
-    : '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="#26304A" stroke-width="6.5"></circle></svg>';
+    fracAcc += frac;
+  });
+
+  var wallGroup = '<g transform="translate(0,' + depth + ') translate(' + cx + ',' + cyTop + ') scale(1,' + squash + ') translate(-' + cx + ',-' + cyTop + ') rotate(-90 ' + cx + ' ' + cyTop + ')">' + wallArcs + '</g>';
+  var topGroup = '<g transform="translate(' + cx + ',' + cyTop + ') scale(1,' + squash + ') translate(-' + cx + ',-' + cyTop + ') rotate(-90 ' + cx + ' ' + cyTop + ')">' + topArcs + '</g>';
+  var labelGroup = '<g>' + labels + '</g>';
+
+  var svg = '<svg viewBox="0 0 ' + vbW + ' ' + vbH + '" style="filter:drop-shadow(0 4px 4px rgba(0,0,0,.35));">' + wallGroup + topGroup + labelGroup + '</svg>';
+
   var legend = slices.map(function(s){
     var pct = total > 0 ? (s.value/total*100) : 0;
-    return '<div class="legend-item"><div class="legend-dot" style="background:' + s.color + '; width:12px; height:12px;"></div><div class="legend-name" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + s.label + '</div><div class="legend-pct" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + dpFmt(pct,2) + '%</div></div>';
+    return '<div class="legend-item"><div class="legend-dot" style="width:12px; height:12px; background:linear-gradient(180deg, ' + dp3dShade_(s.color,35) + ', ' + dp3dShade_(s.color,-25) + ');"></div><div class="legend-name" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + s.label + '</div><div class="legend-pct" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + dpFmt(pct,2) + '%</div></div>';
   }).join('');
-  return '<div class="donut-wrap"><div class="donut">' + svg +
-    '<div class="donut-hole"><div class="tot">' + dpFmt(total,centerDecimals) + '</div><div class="lbl">' + (centerLabel||'Total') + '</div></div>' +
-    '</div><div class="legend">' + legend + '</div></div>';
+
+  return '<div class="donut-wrap"><div class="donut">' + svg + '</div><div class="legend">' + legend + '</div></div>';
 }
 
 function dpBarsHtml(items, decimals){
@@ -576,8 +643,8 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
     var ok = threshold === undefined || threshold === null || (v||0) >= threshold;
     var color = ok ? '#16A34A' : '#DC2626';
     var by = yPos(v);
-    var bh = Math.max(0, (padT+innerH) - by);
-    return '<rect x="' + xLeft(i).toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2.5" fill="' + color + '"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></rect>';
+    var bottomY = padT+innerH;
+    return '<g><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title>' + dp3dColumnHtml_(xLeft(i), by, barW, bottomY, color) + '</g>';
   }).join('');
 
   var xLabels = months.map(function(m,i){
@@ -659,8 +726,8 @@ function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, op
   var bars = values.map(function(v,i){
     var color = dpWarnaBand3_(v, merahBatas, hijauBatas);
     var by = yPos(v);
-    var bh = Math.max(0, (padT+innerH) - by);
-    return '<rect x="' + xLeft(i).toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2.5" fill="' + color + '"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></rect>';
+    var bottomY = padT+innerH;
+    return '<g><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title>' + dp3dColumnHtml_(xLeft(i), by, barW, bottomY, color) + '</g>';
   }).join('');
 
   var xLabels = months.map(function(m,i){
