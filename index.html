@@ -3,29 +3,32 @@
 <head>
 <base target="_top">
 <meta charset="utf-8">
+<title>Dashboard Produksi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
-    --bg:#F3F9FB;
-    --card:#FFFFFF;
-    --panel:#FFFFFF;
-    --line:#DCEEF2;
-    --ink:#1F2433;
-    --mute:#6B8894;
+    --bg:#0B1120;
+    --bg2:#070B14;
+    --card:#131A2B;
+    --card2:#0F1524;
+    --panel:#0D1322;
+    --line:#232C42;
+    --ink:#E7ECF7;
+    --mute:#8592AD;
 
-    --c1:#0EA5E9; /* biru langit - Giling */
-    --c2:#10B981; /* emerald - WIP bahan */
-    --c3:#8B5CF6; /* ungu - WIP wip / thermo */
-    --c4:#6366F1; /* indigo - Extruder / Total Sheet */
-    --c5:#06B6D4; /* cyan/tosca - Thermo */
-    --c6:#F59E0B; /* amber - waste */
-    --c7:#22C55E; /* hijau - baik/ok */
-    --c8:#EF4444; /* merah - waste/downtime */
-    --c9:#64748B; /* abu - lainnya */
+    --c1:#22D3EE; /* cyan - Giling */
+    --c2:#34D399; /* emerald - WIP bahan */
+    --c3:#A78BFA; /* violet - WIP wip / thermo */
+    --c4:#818CF8; /* indigo - Extruder / Total Sheet */
+    --c5:#38BDF8; /* sky - Thermo */
+    --c6:#FBBF24; /* amber - waste */
+    --c7:#4ADE80; /* hijau - baik/ok */
+    --c8:#F87171; /* merah - waste/downtime */
+    --c9:#94A3B8; /* abu - lainnya */
 
-    --grad: linear-gradient(135deg, var(--c1), var(--c5));
+    --grad: linear-gradient(135deg, var(--c1), var(--c4));
 }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
@@ -39,18 +42,15 @@
   }
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important;} }
 
-  #exportBar{ display:flex; gap:8px; padding:10px 24px; background:#fff; border-bottom:1px solid var(--line); }
-  .export-btn{
-    background:#fff; border:1px solid #D7DCE6; color:var(--ink); border-radius:8px;
-    padding:8px 14px; font-size:11.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
-    cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center; gap:6px;
-  }
-  .export-btn:hover{ background:#FAFBFD; }
+  ::-webkit-scrollbar{width:9px; height:9px;}
+  ::-webkit-scrollbar-track{background:var(--bg2);}
+  ::-webkit-scrollbar-thumb{background:#2A3450; border-radius:5px;}
+  ::-webkit-scrollbar-thumb:hover{background:#37436A;}
 
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
-    #panel, #tabs, #exportBar, #loading{ display:none !important; }
-    body{ height:auto; overflow:visible; }
+    #rail, #controlbar, #loading{ display:none !important; }
+    body{ height:auto; overflow:visible; background:#fff; color:#111; }
     #main, #content{ overflow:visible; height:auto; }
     .section{ display:none !important; }
     .section.active{ display:block !important; }
@@ -59,76 +59,98 @@
     tr{ break-inside:avoid; }
   }
 
-  #panel{
-    width:250px; min-width:250px;
+  /* ---------- Rail kiri (berisi tab) ---------- */
+  #rail{
+    width:220px; min-width:220px;
     background:var(--panel);
     border-right:1px solid var(--line);
-    padding:18px 16px;
-    display:flex; flex-direction:column; gap:16px;
+    padding:20px 14px;
+    display:flex; flex-direction:column; gap:18px;
     overflow-y:auto;
   }
-  #panel h1{
-    font-size:16px; letter-spacing:.02em; margin:0;
-    background:var(--grad);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+  #railBrand .eyebrow{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--mute); font-weight:700;}
+  #railBrand h1{ font-size:16.5px; margin:4px 0 0; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.01em;}
+
+  #railTabs{ display:flex; flex-direction:column; gap:4px; }
+  .tab{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:9px;
+    color:var(--mute); font-size:12.5px; font-weight:600; letter-spacing:.01em;
+    cursor:pointer; border:1px solid transparent;
   }
-  .panel-sub{font-size:10.5px; color:var(--mute); margin-top:-10px;}
-  .ctrl-group{
-    background:#FAFBFD; border:1px solid var(--line); border-radius:12px;
-    padding:12px 12px 14px;
+  .tab .tab-ic{
+    width:24px; height:22px; border-radius:6px; background:#1B2438;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Mono', monospace; font-size:9px; font-weight:700; color:var(--mute); flex:none;
   }
-  .ctrl-label{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--mute); margin-bottom:8px; display:block; font-weight:600;}
-  .date-row{display:flex; flex-direction:column; gap:8px;}
-  .date-row label{font-size:11px; color:#4B5468; display:block; margin-bottom:3px;}
-  input[type=date]{
-    width:100%; background:#fff; border:1px solid #D7DCE6; color:var(--ink);
-    border-radius:7px; padding:6px 7px; font-family:'Space Mono', monospace; font-size:12px;
-  }
-  #bulanFilter{
-    width:100%; background:#fff; border:1px solid #D7DCE6; color:var(--ink);
-    border-radius:7px; padding:7px; font-family:'Space Grotesk', sans-serif; font-size:12.5px;
-  }
-  #btnApply{
-    background:var(--grad); color:#fff; border:none; border-radius:9px; padding:11px 10px;
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12.5px;
-    letter-spacing:.03em; text-transform:uppercase; cursor:pointer;
-    box-shadow:0 6px 14px -6px rgba(14,165,233,.55);
-  }
-  #btnApply:active{transform:translateY(1px);}
-  #btnReset{
-    background:transparent; color:var(--mute); border:1px solid #D7DCE6; border-radius:9px;
-    padding:8px 10px; font-size:11px; cursor:pointer; font-family:'Space Grotesk', sans-serif;
-  }
+  .tab:hover{ color:var(--ink); background:#151D30; }
+  .tab.active{ color:var(--ink); background:linear-gradient(90deg, rgba(34,211,238,.14), rgba(129,140,248,.08)); border-color:#2A3B57; }
+  .tab.active .tab-ic{ background:var(--grad); color:#0B1120; }
+
   #statusLine{
     font-family:'Space Mono', monospace; font-size:10px; color:var(--mute); margin-top:auto;
-    line-height:1.5; border-top:1px solid var(--line); padding-top:10px;
+    line-height:1.6; border-top:1px solid var(--line); padding-top:12px;
   }
   #statusLine b{color:var(--ink);}
 
+  /* ---------- Konten utama ---------- */
   #main{flex:1; display:flex; flex-direction:column; min-width:0;}
-  #tabs{ display:flex; background:#fff; border-bottom:1px solid var(--line); padding:0 10px; overflow-x:auto; }
-  .tab{
-    padding:13px 16px 11px; color:var(--mute); font-size:12px; letter-spacing:.03em;
-    text-transform:uppercase; cursor:pointer; border-bottom:3px solid transparent;
-    white-space:nowrap; font-weight:600;
+
+  #controlbar{
+    display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;
+    background:var(--card); border-bottom:1px solid var(--line);
+    padding:12px 22px;
   }
-  .tab.active{ color:var(--ink); border-bottom-color:var(--c5); }
-  #content{ flex:1; overflow-y:auto; padding:20px 24px 40px; }
+  .filter-group{ display:flex; flex-direction:column; gap:4px; }
+  .filter-date-stack{ display:grid; grid-template-columns:1fr; gap:6px; width:128px; }
+  .filter-group label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--mute); margin-bottom:8px; display:block; font-weight:600;}
+  input[type=date]{
+    width:128px;
+    background:var(--card2); border:1px solid var(--line); color:var(--ink);
+    border-radius:7px; padding:6px 6px; font-family:'Space Mono', monospace; font-size:11.5px;
+    color-scheme: dark;
+  }
+  #bulanFilter{ width:120px; }
+  #shiftFilter{ width:100px; }
+  #bulanFilter, #shiftFilter{
+    background:var(--card2); border:1px solid var(--line); color:var(--ink);
+    border-radius:7px; padding:7px 6px; font-family:'Space Grotesk', sans-serif; font-size:12px;
+  }
+  #btnApply{
+    background:var(--grad); color:#081019; border:none; border-radius:9px; padding:10px 16px;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12px;
+    letter-spacing:.03em; text-transform:uppercase; cursor:pointer;
+    box-shadow:0 8px 18px -8px rgba(34,211,238,.45);
+  }
+  #btnApply:active{transform:translateY(1px);}
+  #btnReset{
+    background:transparent; color:var(--mute); border:1px solid var(--line); border-radius:9px;
+    padding:9px 14px; font-size:11px; cursor:pointer; font-family:'Space Grotesk', sans-serif;
+  }
+  #exportGroup{ display:flex; gap:8px; margin-left:auto; }
+  .export-btn{
+    background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:8px;
+    padding:8px 13px; font-size:11px; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
+    cursor:pointer; font-family:'Space Grotesk', sans-serif;
+  }
+  .export-btn:hover{ background:#1B2438; }
+
+  #content{ flex:1; overflow-y:auto; padding:22px 26px 44px; }
   .section{display:none;}
   .section.active{display:block;}
 
   .stat-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
   .stat-card{
     background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:12px 16px; min-width:150px; flex:1 1 150px;
+    padding:13px 16px; min-width:150px; flex:1 1 150px;
   }
   .stat-card .k{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--mute); font-weight:600;}
-  .stat-card .v{font-family:'Space Mono', monospace; font-size:20px; font-weight:700; margin-top:4px;}
+  .stat-card .v{font-family:'Space Mono', monospace; font-size:20px; font-weight:700; margin-top:4px; color:var(--ink);}
   .stat-card .v.good{color:var(--c7);}
   .stat-card .v.bad{color:var(--c8);}
   .stat-card .v.accent{color:var(--c1);}
-  .stat-card .v.warn{color:#D97706;}
-  .v.warn{color:#D97706;}
+  .stat-card .v.warn{color:var(--c6);}
+  .v.warn{color:var(--c6);}
 
   .chart-row{ display:flex; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
   .chart-card{
@@ -140,9 +162,9 @@
   .donut-wrap{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
   .donut{ width:132px; height:132px; flex:none; position:relative; }
   .donut svg{ width:100%; height:100%; display:block; }
-  .donut-hole{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:80px; height:80px; border-radius:50%; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .donut-hole{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:80px; height:80px; border-radius:50%; background:var(--card2); display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .donut-hole .tot{ font-family:'Space Mono', monospace; font-weight:700; font-size:16.5px; color:var(--ink); }
-  .donut-hole .lbl{ font-size:9.5px; font-weight:700; color:#4B5468; text-transform:uppercase; letter-spacing:.05em; }
+  .donut-hole .lbl{ font-size:9.5px; font-weight:700; color:var(--mute); text-transform:uppercase; letter-spacing:.05em; }
   .legend{ flex:1; min-width:140px; display:flex; flex-direction:column; gap:6px; }
   .legend-item{ display:flex; align-items:center; gap:7px; font-size:11.5px; }
   .legend-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
@@ -152,99 +174,98 @@
   .bars{ display:flex; flex-direction:column; gap:10px; }
   .bar-row{ display:flex; align-items:center; gap:10px; }
   .bar-name{ width:110px; font-size:11.5px; color:var(--ink); flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .bar-track{ flex:1; height:14px; background:#EEF1F7; border-radius:7px; overflow:hidden; }
+  .bar-track{ flex:1; height:14px; background:#1B2438; border-radius:7px; overflow:hidden; }
   .bar-fill{ height:100%; border-radius:7px 0 0 7px; transition:width .5s ease; }
   .bar-val{ width:64px; text-align:right; font-family:'Space Mono', monospace; font-size:11px; color:var(--mute); flex:none; }
 
   table{width:100%; border-collapse:collapse; background:var(--card); border-radius:12px; overflow:hidden; border:1px solid var(--line);}
   thead th{
-    background:#FAFBFD; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute);
+    background:var(--card2); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute);
     text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); font-weight:700;
   }
-  tbody td{ padding:9px 10px; font-size:12.5px; border-bottom:1px solid #F1F3F8; font-family:'Space Mono', monospace; }
+  tbody td{ padding:9px 10px; font-size:12.5px; border-bottom:1px solid #1B2438; font-family:'Space Mono', monospace; color:var(--ink); }
   tbody td.name{ font-family:'Space Grotesk', sans-serif; }
   tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{ background:#141C30; }
 
   .gauge{ display:flex; align-items:center; gap:8px; min-width:150px; }
-  .gauge-track{ position:relative; flex:1; height:9px; background:#EEF1F7; border-radius:5px; overflow:hidden; }
+  .gauge-track{ position:relative; flex:1; height:9px; background:#1B2438; border-radius:5px; overflow:hidden; }
   .gauge-fill{ height:100%; border-radius:5px 0 0 5px; width:0%; transition:width .5s ease; }
-  .gauge-num{ font-family:'Space Mono', monospace; font-size:11px; width:44px; text-align:right; }
+  .gauge-num{ font-family:'Space Mono', monospace; font-size:11px; width:44px; text-align:right; color:var(--ink); }
 
   .section h2{ font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--mute); margin:22px 0 8px; }
   .section h2:first-child{margin-top:0;}
   .note{font-size:11px; color:var(--mute); margin-top:8px;}
   .empty{color:var(--mute); font-size:12.5px; padding:20px 0;}
   .err{color:var(--c8); font-size:12.5px; padding:10px 0;}
-  #loading{ position:fixed; inset:0; background:rgba(31,36,51,.35); display:none; align-items:center; justify-content:center; z-index:50; }
+  #loading{ position:fixed; inset:0; background:rgba(4,7,14,.72); display:none; align-items:center; justify-content:center; z-index:50; }
   #loading.show{display:flex;}
-  #loading span{ font-family:'Space Mono', monospace; color:#1F2433; font-size:12px; background:#fff; padding:10px 16px; border-radius:9px; border:1px solid var(--c5); }
+  #loading span{ font-family:'Space Mono', monospace; color:var(--ink); font-size:12px; background:var(--card); padding:10px 16px; border-radius:9px; border:1px solid var(--c5); }
 </style>
 </head>
 <body>
 
-<div id="panel">
-  <h1>Periode 2026</h1>
-  <div class="panel-sub">Slicer TANGGAL / BULAN - semua sheet</div>
-
-  <div class="ctrl-group">
-    <span class="ctrl-label">Rentang Tanggal</span>
-    <div class="date-row">
-      <div><label>Dari</label><input type="date" id="startDate" onchange="dpOnDateChange()"></div>
-      <div><label>Sampai</label><input type="date" id="endDate" onchange="dpOnDateChange()"></div>
-    </div>
+<nav id="rail">
+  <div id="railBrand">
+    <div class="eyebrow">STP · Live</div>
+    <h1>PT. Sinar Taman Plastindo</h1>
   </div>
 
-  <div class="ctrl-group">
-    <span class="ctrl-label">Bulan</span>
-    <select id="bulanFilter" onchange="dpOnBulanChange()">
-      <option value="">Semua Bulan</option>
-      <option value="1">Januari</option>
-      <option value="2">Februari</option>
-      <option value="3">Maret</option>
-      <option value="4">April</option>
-      <option value="5">Mei</option>
-      <option value="6">Juni</option>
-      <option value="7">Juli</option>
-      <option value="8">Agustus</option>
-      <option value="9">September</option>
-      <option value="10">Oktober</option>
-      <option value="11">November</option>
-      <option value="12">Desember</option>
-    </select>
+  <div id="railTabs">
+    <div class="tab active" data-tab="giling" onclick="dpSwitchTab('giling')"><span class="tab-ic">GL</span>Pemakaian Bahan</div>
+    <div class="tab" data-tab="wip" onclick="dpSwitchTab('wip')"><span class="tab-ic">WP</span>WIP</div>
+    <div class="tab" data-tab="thermo" onclick="dpSwitchTab('thermo')"><span class="tab-ic">TH</span>Thermo</div>
+    <div class="tab" data-tab="trenTf" onclick="dpSwitchTab('trenTf')"><span class="tab-ic">TF</span>Performa Thermo</div>
+    <div class="tab" data-tab="extruder" onclick="dpSwitchTab('extruder')"><span class="tab-ic">EX</span>Extruder</div>
+    <div class="tab" data-tab="totalSheet" onclick="dpSwitchTab('totalSheet')"><span class="tab-ic">TS</span>Performa Extruder</div>
+    <div class="tab" data-tab="tehnik" onclick="dpSwitchTab('tehnik')"><span class="tab-ic">TK</span>Down Time</div>
   </div>
-
-  <div class="ctrl-group">
-    <span class="ctrl-label">Shift</span>
-    <select id="shiftFilter">
-      <option value="">Semua Shift</option>
-      <option value="1">Shift 1</option>
-      <option value="2">Shift 2</option>
-      <option value="3">Shift 3</option>
-    </select>
-  </div>
-
-  <button id="btnApply" onclick="dpApplyFilter()">Terapkan Filter</button>
-  <button id="btnReset" onclick="dpResetFilter()">Reset</button>
 
   <div id="statusLine">
     Baris terbaca: <b id="stCount">-</b><br>
     Update: <b id="stTime">-</b>
   </div>
-</div>
+</nav>
 
 <div id="main">
-  <div id="exportBar">
-    <button class="export-btn" onclick="dpDownloadPNG()">[v] Download PNG</button>
-    <button class="export-btn" onclick="dpPrintPDF()">[P] Print / PDF</button>
-  </div>
-  <div id="tabs">
-    <div class="tab active" data-tab="giling" onclick="dpSwitchTab('giling')">Giling</div>
-    <div class="tab" data-tab="wip" onclick="dpSwitchTab('wip')">WIP</div>
-    <div class="tab" data-tab="thermo" onclick="dpSwitchTab('thermo')">Thermo</div>
-    <div class="tab" data-tab="trenTf" onclick="dpSwitchTab('trenTf')">Tren TF</div>
-    <div class="tab" data-tab="extruder" onclick="dpSwitchTab('extruder')">Extruder</div>
-    <div class="tab" data-tab="totalSheet" onclick="dpSwitchTab('totalSheet')">Total Sheet</div>
-    <div class="tab" data-tab="tehnik" onclick="dpSwitchTab('tehnik')">Tehnik</div>
+  <div id="controlbar">
+    <div class="filter-date-stack">
+      <div class="filter-group"><label>Dari</label><input type="date" id="startDate" onchange="dpOnDateChange()"></div>
+      <div class="filter-group"><label>Sampai</label><input type="date" id="endDate" onchange="dpOnDateChange()"></div>
+    </div>
+    <div class="filter-group">
+      <label>Bulan</label>
+      <select id="bulanFilter" onchange="dpOnBulanChange()">
+        <option value="">Semua Bulan</option>
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Shift</label>
+      <select id="shiftFilter">
+        <option value="">Semua Shift</option>
+        <option value="1">Shift 1</option>
+        <option value="2">Shift 2</option>
+        <option value="3">Shift 3</option>
+      </select>
+    </div>
+    <button id="btnApply" onclick="dpApplyFilter()">Terapkan</button>
+    <button id="btnReset" onclick="dpResetFilter()">Reset</button>
+    <div id="exportGroup">
+      <button class="export-btn" onclick="dpDownloadPNG()">PNG</button>
+      <button class="export-btn" onclick="dpPrintPDF()">PDF</button>
+    </div>
   </div>
 
   <div id="content">
@@ -274,7 +295,7 @@ var MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','
 var dpTrendMode = { wip: 'filter', thermo: 'filter', trenTf: 'filter', extruder: 'filter', totalSheet: 'filter' };
 
 function dpToggleBtnStyle(active){
-  return 'padding:6px 12px;border-radius:8px;font-family:\'Space Grotesk\',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;border:1px solid ' + (active ? '#1F2433' : '#D7DCE6') + ';background:' + (active ? '#1F2433' : '#fff') + ';color:' + (active ? '#fff' : '#4B5468') + ';';
+  return 'padding:6px 12px;border-radius:8px;font-family:\'Space Grotesk\',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;border:1px solid ' + (active ? '#22D3EE' : '#232C42') + ';background:' + (active ? '#132531' : '#0F1524') + ';color:' + (active ? '#22D3EE' : '#8592AD') + ';';
 }
 
 function dpTrendToggleHtml(section){
@@ -308,7 +329,7 @@ function dpDownloadPNG(){
     return;
   }
   var win = window.open('', '_blank');
-  html2canvas(target, { backgroundColor: '#ffffff', scale: 2 }).then(function(canvas){
+  html2canvas(target, { backgroundColor: '#0B1120', scale: 2 }).then(function(canvas){
     var dataUrl = canvas.toDataURL('image/png');
     var filename = 'dashboard-' + dpCurrentTabName() + '-' + new Date().toISOString().slice(0,10) + '.png';
     if (win && !win.closed){
@@ -316,7 +337,7 @@ function dpDownloadPNG(){
       doc.title = filename;
       var b = doc.body;
       b.style.margin = '0';
-      b.style.background = '#20242e';
+      b.style.background = '#05070C';
       b.style.display = 'flex';
       b.style.flexDirection = 'column';
       b.style.alignItems = 'center';
@@ -415,7 +436,7 @@ function dpDonutHtml(slices, centerLabel, centerDecimals){
   }).join('');
   var svg = total > 0
     ? '<svg viewBox="0 0 36 36"><g transform="rotate(-90 18 18)">' + circles + '</g></svg>'
-    : '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="#EEF1F7" stroke-width="6.5"></circle></svg>';
+    : '<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="' + r + '" fill="transparent" stroke="#26304A" stroke-width="6.5"></circle></svg>';
   var legend = slices.map(function(s){
     var pct = total > 0 ? (s.value/total*100) : 0;
     return '<div class="legend-item"><div class="legend-dot" style="background:' + s.color + '; width:12px; height:12px;"></div><div class="legend-name" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + s.label + '</div><div class="legend-pct" style="font-weight:700; color:var(--ink); font-size:12.5px;">' + dpFmt(pct,2) + '%</div></div>';
@@ -444,13 +465,25 @@ function dpTopNPlusOther(rows, valueKey, labelKey, n){
 }
 
 /* ---------------------------------------------------------------------
- *  Label bulan "yyyy-MM" -> "Jul 2026"
+ *  Label periode - deteksi otomatis dari jumlah bagian key:
+ *  "yyyy-MM"    -> "Jul 2026"   (mode Selalu Semua Bulan)
+ *  "yyyy-MM-dd" -> "12 Jul"     (mode Ikuti Filter, per tanggal)
  * ------------------------------------------------------------------- */
 function dpMonthLabel(key){
   var parts = String(key).split('-');
   var y = parts[0];
   var m = parseInt(parts[1], 10);
+  if (parts.length >= 3){
+    var tgl = parseInt(parts[2], 10);
+    return tgl + ' ' + (MONTH_NAMES[m-1] || '?');
+  }
   return (MONTH_NAMES[m-1] || '?') + ' ' + y;
+}
+
+// Deteksi teks periode ("Bulan" atau "Tanggal") dari sample key -
+// dipakai buat judul section supaya sesuai mode trend yang aktif.
+function dpPeriodeText_(sampleKey){
+  return (String(sampleKey||'').split('-').length >= 3) ? 'Tanggal' : 'Bulan';
 }
 
 /* ---------------------------------------------------------------------
@@ -484,14 +517,14 @@ function dpLineChartHtml(datasets, months, opts){
   for (var s = 0; s <= steps; s++){
     var gy = padT + innerH - (s/steps)*innerH;
     var val = (maxVal/steps*s);
-    gridLines += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w-padR) + '" y2="' + gy + '" stroke="#DCE1EB" stroke-width="1"></line>';
-    gridLines += '<text x="' + (padL-8) + '" y="' + (gy+3) + '" text-anchor="end" font-size="10.5" font-weight="700" fill="#3A4356" font-family="Space Mono, monospace">' + dpFmt(val,0) + '</text>';
+    gridLines += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w-padR) + '" y2="' + gy + '" stroke="#232C42" stroke-width="1"></line>';
+    gridLines += '<text x="' + (padL-8) + '" y="' + (gy+3) + '" text-anchor="end" font-size="10.5" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + dpFmt(val,0) + '</text>';
   }
 
   var xLabels = months.map(function(m,i){
     var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
     var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
-    return '<text x="' + xa.toFixed(1) + '" y="' + (h-10) + '" text-anchor="' + anchor + '" font-size="10.5" font-weight="700" fill="#3A4356" font-family="Space Mono, monospace">' + m + '</text>';
+    return '<text x="' + xa.toFixed(1) + '" y="' + (h-10) + '" text-anchor="' + anchor + '" font-size="10.5" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
   }).join('');
 
   var lines = datasets.map(function(ds){
@@ -547,7 +580,7 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
   var xLabels = months.map(function(m,i){
     var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
     var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
-    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#3A4356" font-family="Space Mono, monospace">' + m + '</text>';
+    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
   }).join('');
 
   var lastVal = values[values.length - 1];
@@ -561,14 +594,14 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
     var selisihText = selisih >= 0
       ? '+' + dpFmt(selisih,dec) + unit + ' di atas target'
       : dpFmt(selisih,dec) + unit + ' (kurang ' + dpFmt(Math.abs(selisih),dec) + unit + ')';
-    targetInfoHtml = '<div style="font-size:11px; font-weight:700; color:#4B5468; margin-bottom:8px;">' +
+    targetInfoHtml = '<div style="font-size:11px; font-weight:700; color:#8592AD; margin-bottom:8px;">' +
       'Target: ' + dpFmt(threshold,dec) + unit + ' &middot; <span style="color:' + selisihColor + ';">' + selisihText + '</span>' +
       '</div>';
   }
 
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
     thresholdSvg +
-    '<path d="' + pathD + '" fill="none" stroke="#2563EB" stroke-width="2.6"></path>' +
+    '<path d="' + pathD + '" fill="none" stroke="#38BDF8" stroke-width="2.6"></path>' +
     dots + xLabels +
     '</svg>';
 
@@ -628,7 +661,7 @@ function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, op
   var xLabels = months.map(function(m,i){
     var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
     var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
-    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#3A4356" font-family="Space Mono, monospace">' + m + '</text>';
+    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
   }).join('');
 
   var lastVal = values[values.length - 1];
@@ -636,7 +669,7 @@ function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, op
 
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
     bandSvg +
-    '<path d="' + pathD + '" fill="none" stroke="#2563EB" stroke-width="2.6"></path>' +
+    '<path d="' + pathD + '" fill="none" stroke="#38BDF8" stroke-width="2.6"></path>' +
     dots + xLabels +
     '</svg>';
 
@@ -765,13 +798,14 @@ function dpRenderWIP(d, trend){
     '<div class="chart-card"><h3>Bahan - 14 Hari Terakhir</h3>' + dpBarsHtml(barsBahan) + '</div>' +
     '</div>';
 
-  html += '<h2>Perkembangan per Bulan</h2>';
+  var periodeTxtW = dpPeriodeText_(trend && trend.rows && trend.rows[0] ? trend.rows[0].month : null);
+  html += '<h2>Perkembangan per ' + periodeTxtW + '</h2>';
   html += dpTrendToggleHtml('wip');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsW = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var bahanDs = { name: 'Total Bahan', color: '#14B8A6', values: trend.rows.map(function(r){ return r.bahan; }) };
     var wipDs = { name: 'Total WIP', color: '#8B5CF6', values: trend.rows.map(function(r){ return r.wip; }) };
-    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Bahan vs Total WIP per Bulan</h3>' + dpLineChartHtml([bahanDs, wipDs], monthsW) + '</div></div>';
+    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Bahan vs Total WIP per ' + periodeTxtW + '</h3>' + dpLineChartHtml([bahanDs, wipDs], monthsW) + '</div></div>';
   } else {
     html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
@@ -808,14 +842,15 @@ function dpRenderThermo(d, trend){
   html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Percentage per Mesin TF (Tonase : Pemakaian Sheet) - Merah &lt; ' + merahBatas + '%, Kuning ' + merahBatas + '-' + dpFmt(hijauBatas-0.01,2) + '%, Hijau &ge; ' + hijauBatas + '%</h3>' + dpBarsHtml(pctBars,2) + '</div></div>';
   html += '<div class="chart-row"><div class="chart-card"><h3>Kontribusi Tonase per Mesin TF</h3>' + dpDonutHtml(tonaseSlices,'Kg') + '</div></div>';
 
-  html += '<h2>Perkembangan per Bulan</h2>';
+  var periodeTxtT = dpPeriodeText_(trend && trend.rows && trend.rows[0] ? trend.rows[0].month : null);
+  html += '<h2>Perkembangan per ' + periodeTxtT + '</h2>';
   html += dpTrendToggleHtml('thermo');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsT = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var boxDs = { name: 'Total Box', color: '#3B82F6', values: trend.rows.map(function(r){ return r.box; }) };
     var tonaseDs = { name: 'Total Tonase', color: '#FF7A45', values: trend.rows.map(function(r){ return r.tonase; }) };
-    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Hasil Box per Bulan</h3>' + dpLineChartHtml([boxDs], monthsT) + '</div></div>';
-    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Tonase per Bulan</h3>' + dpLineChartHtml([tonaseDs], monthsT, {decimals:2}) + '</div></div>';
+    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Hasil Box per ' + periodeTxtT + '</h3>' + dpLineChartHtml([boxDs], monthsT) + '</div></div>';
+    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Total Tonase per ' + periodeTxtT + '</h3>' + dpLineChartHtml([tonaseDs], monthsT, {decimals:2}) + '</div></div>';
   } else {
     html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
@@ -825,7 +860,7 @@ function dpRenderThermo(d, trend){
   d.rows.forEach(function(r){
     html += '<tr><td class="name">' + r.tf + '</td><td>' + dpFmt(r.sheetNaik) + '</td><td>' + dpFmt(r.pemakaianSheet) + '</td><td>' + dpFmt(r.box) + '</td><td>' + dpFmt(r.pcs) + '</td><td>' + dpFmt(r.tonase,2) + '</td><td>' + dpFmt(r.gram,2) + '</td><td>' + dpFmt(r.bsSkalaton,2) + '</td><td>' + dpFmt(r.bsSheet,2) + '</td><td>' + dpFmt(r.waste,2) + '</td><td>' + dpGaugeHtml(r.pct, dpWarnaBand3_(r.pct, merahBatas, hijauBatas)) + '</td></tr>';
   });
-  html += '<tr style="font-weight:700;background:#FAFBFD;"><td class="name">Grand Total</td><td>' + dpFmt(s.sheetNaik) + '</td><td>' + dpFmt(s.pemakaianSheet) + '</td><td>' + dpFmt(s.box) + '</td><td>' + dpFmt(s.pcs) + '</td><td>' + dpFmt(s.tonase,2) + '</td><td>' + dpFmt(s.gram,2) + '</td><td>' + dpFmt(s.bsSkalaton,2) + '</td><td>' + dpFmt(s.bsSheet,2) + '</td><td>' + dpFmt(s.waste,2) + '</td><td>' + dpGaugeHtml(s.pct, dpWarnaBand3_(s.pct, merahBatas, hijauBatas)) + '</td></tr>';
+  html += '<tr style="font-weight:700;background:var(--card2);"><td class="name">Grand Total</td><td>' + dpFmt(s.sheetNaik) + '</td><td>' + dpFmt(s.pemakaianSheet) + '</td><td>' + dpFmt(s.box) + '</td><td>' + dpFmt(s.pcs) + '</td><td>' + dpFmt(s.tonase,2) + '</td><td>' + dpFmt(s.gram,2) + '</td><td>' + dpFmt(s.bsSkalaton,2) + '</td><td>' + dpFmt(s.bsSheet,2) + '</td><td>' + dpFmt(s.waste,2) + '</td><td>' + dpGaugeHtml(s.pct, dpWarnaBand3_(s.pct, merahBatas, hijauBatas)) + '</td></tr>';
   html += '</tbody></table>';
 
   html += '<h2>Per Produk</h2>';
@@ -844,7 +879,8 @@ function dpRenderThermo(d, trend){
  * ------------------------------------------------------------------- */
 function dpRenderTrenTf(trend){
   var el = document.getElementById('sec-trenTf');
-  var html = '<h2>Perkembangan % Tonase per Mesin TF (per Bulan)</h2>';
+  var periodeTxtTf = dpPeriodeText_(trend && trend.months && trend.months[0] ? trend.months[0] : null);
+  var html = '<h2>Perkembangan % Tonase per Mesin TF (per ' + periodeTxtTf + ')</h2>';
   html += dpTrendToggleHtml('trenTf');
 
   if (!trend || trend.error || !trend.months || !trend.months.length || !trend.series || !trend.series.length){
@@ -866,8 +902,8 @@ function dpRenderTrenTf(trend){
   });
   html += '</div>';
 
-  html += '<h2>Tabel % Tonase per Bulan</h2>';
-  html += '<table><thead><tr><th>Bulan</th>';
+  html += '<h2>Tabel % Tonase per ' + periodeTxtTf + '</h2>';
+  html += '<table><thead><tr><th>' + periodeTxtTf + '</th>';
   trend.series.forEach(function(s){ html += '<th>' + s.tf + '</th>'; });
   html += '</tr></thead><tbody>';
   trend.months.forEach(function(m, mi){
@@ -916,13 +952,14 @@ function dpRenderExtruder(d, trend){
     '<div class="chart-card"><h3>Total per Produk</h3>' + dpBarsHtml(topTotal) + '</div>' +
     '</div>';
 
-  html += '<h2>Perkembangan per Bulan</h2>';
+  var periodeTxtE = dpPeriodeText_(trend && trend.rows && trend.rows[0] ? trend.rows[0].month : null);
+  html += '<h2>Perkembangan per ' + periodeTxtE + '</h2>';
   html += dpTrendToggleHtml('extruder');
   if (trend && !trend.error && trend.rows && trend.rows.length){
     var monthsE = trend.rows.map(function(r){ return dpMonthLabel(r.month); });
     var baikDs = { name: 'Hasil Sheet Baik', color: '#22C55E', values: trend.rows.map(function(r){ return r.baik; }) };
     var pemakaianDs = { name: 'Pemakaian (Total)', color: '#3B82F6', values: trend.rows.map(function(r){ return r.total; }) };
-    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Hasil Sheet Baik vs Pemakaian per Bulan</h3>' + dpLineChartHtml([baikDs, pemakaianDs], monthsE) + '</div></div>';
+    html += '<div class="chart-row"><div class="chart-card" style="flex:1 1 100%;"><h3>Hasil Sheet Baik vs Pemakaian per ' + periodeTxtE + '</h3>' + dpLineChartHtml([baikDs, pemakaianDs], monthsE) + '</div></div>';
   } else {
     html += '<div class="empty">Tidak ada data bulanan untuk mode ini.</div>';
   }
@@ -958,11 +995,12 @@ function dpRenderTotalSheet(d, trend){
     '<div class="chart-card"><h3>Status Capaian Target per Extruder</h3>' + dpDonutHtml(statusSlices,'Ext',0) + '</div>' +
     '</div>';
 
-  html += '<h2>Perkembangan per Bulan (per Extruder)</h2>';
+  var periodeTxtS = dpPeriodeText_(trend && trend.months && trend.months[0] ? trend.months[0] : null);
+  html += '<h2>Perkembangan per ' + periodeTxtS + ' (per Extruder)</h2>';
   html += dpTrendToggleHtml('totalSheet');
   if (trend && !trend.error && trend.months && trend.months.length && trend.series && trend.series.length){
     var monthsS = trend.months.map(function(m){ return dpMonthLabel(m); });
-    html += '<div class="note">Grafik di bawah ini menampilkan rata-rata per shift TIAP BULAN sendiri-sendiri (satu titik = satu bulan), beda dari kolom "Rata2/Shift" di tabel bawah yang menggabungkan seluruh rentang filter jadi satu angka. Kalau bulan terakhir kelihatan rendah, kemungkinan karena bulan itu belum selesai (datanya baru sebagian). Garis putus-putus merah = target. Titik hijau = capai target, titik merah = di bawah target.</div>';
+    html += '<div class="note">Grafik di bawah ini menampilkan rata-rata per shift TIAP ' + periodeTxtS.toUpperCase() + ' sendiri-sendiri (satu titik = satu ' + periodeTxtS.toLowerCase() + '), beda dari kolom "Rata2/Shift" di tabel bawah yang menggabungkan seluruh rentang filter jadi satu angka. Garis putus-putus merah = target. Titik hijau = capai target, titik merah = di bawah target.</div>';
     html += '<div class="chart-row">';
     trend.series.forEach(function(s){
       var titleS = s.ext + (s.target ? '' : ' (belum ada target)');
