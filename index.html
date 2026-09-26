@@ -544,10 +544,10 @@ function dpLineChartHtml(datasets, months, opts){
 }
 
 /* ---------------------------------------------------------------------
- *  Mini line chart SATU SERIES (untuk grid "1 kartu per item", supaya
- *  tidak ada garis numpuk/warna mirip). Titik diwarnai hijau/merah
- *  sesuai ambang batas, ada garis putus-putus penanda ambang batas,
- *  dan angka bulan terakhir ditonjolkan di atas grafik.
+ *  Mini BAR chart SATU SERIES (untuk grid "1 kartu per item"). Tiap
+ *  batang diwarnai hijau/merah sesuai capai target atau tidak, ada
+ *  garis putus-putus horizontal sebagai penanda target, dan angka
+ *  periode terakhir ditonjolkan di atas grafik.
  * ------------------------------------------------------------------- */
 function dpMiniLineChartHtml(title, values, months, threshold, opts){
   opts = opts || {};
@@ -560,7 +560,9 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
   var maxCandidate = values.reduce(function(m,v){ return Math.max(m, v||0); }, threshold || 0);
   var maxVal = maxCandidate > 0 ? maxCandidate * 1.15 : 100;
 
-  function xPos(i){ return n <= 1 ? padL + innerW/2 : padL + (i/(n-1))*innerW; }
+  var gap = 6;
+  var barW = n > 0 ? Math.max(4, (innerW - gap*(n-1)) / n) : innerW;
+  function xLeft(i){ return padL + i*(barW+gap); }
   function yPos(v){ return padT + innerH - ((v||0)/maxVal)*innerH; }
 
   var thresholdSvg = '';
@@ -570,17 +572,17 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
       '<text x="' + (w-padR) + '" y="' + (ty-5).toFixed(1) + '" text-anchor="end" font-size="10" font-weight="700" fill="#DC2626" font-family="Space Mono, monospace">' + threshold + unit + '</text>';
   }
 
-  var pathD = values.map(function(v,i){ return (i===0?'M':'L') + xPos(i).toFixed(1) + ',' + yPos(v).toFixed(1); }).join(' ');
-  var dots = values.map(function(v,i){
+  var bars = values.map(function(v,i){
     var ok = threshold === undefined || threshold === null || (v||0) >= threshold;
     var color = ok ? '#16A34A' : '#DC2626';
-    return '<circle cx="' + xPos(i).toFixed(1) + '" cy="' + yPos(v).toFixed(1) + '" r="4.2" fill="' + color + '" stroke="#fff" stroke-width="1.4"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></circle>';
+    var by = yPos(v);
+    var bh = Math.max(0, (padT+innerH) - by);
+    return '<rect x="' + xLeft(i).toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2.5" fill="' + color + '"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></rect>';
   }).join('');
 
   var xLabels = months.map(function(m,i){
-    var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
-    var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
-    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
+    var xc = xLeft(i) + barW/2;
+    return '<text x="' + xc.toFixed(1) + '" y="' + (h-6) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
   }).join('');
 
   var lastVal = values[values.length - 1];
@@ -600,9 +602,7 @@ function dpMiniLineChartHtml(title, values, months, threshold, opts){
   }
 
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
-    thresholdSvg +
-    '<path d="' + pathD + '" fill="none" stroke="#38BDF8" stroke-width="2.6"></path>' +
-    dots + xLabels +
+    bars + thresholdSvg + xLabels +
     '</svg>';
 
   return '<div class="chart-card" style="flex:1 1 260px;">' +
@@ -644,6 +644,10 @@ function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, op
   function xPos(i){ return n <= 1 ? padL + innerW/2 : padL + (i/(n-1))*innerW; }
   function yPos(v){ return padT + innerH - ((v||0)/maxVal)*innerH; }
 
+  var gap = 6;
+  var barW = n > 0 ? Math.max(4, (innerW - gap*(n-1)) / n) : innerW;
+  function xLeft(i){ return padL + i*(barW+gap); }
+
   var merahY = yPos(merahBatas);
   var hijauY = yPos(hijauBatas);
   var bandSvg =
@@ -652,25 +656,23 @@ function dpMiniLineChartHtml3_(title, values, months, merahBatas, hijauBatas, op
     '<line x1="' + padL + '" y1="' + hijauY.toFixed(1) + '" x2="' + (w-padR) + '" y2="' + hijauY.toFixed(1) + '" stroke="#16A34A" stroke-width="1.6" stroke-dasharray="5 3"></line>' +
     '<text x="' + (w-padR) + '" y="' + (hijauY-4).toFixed(1) + '" text-anchor="end" font-size="9" font-weight="700" fill="#16A34A" font-family="Space Mono, monospace">' + hijauBatas + unit + '</text>';
 
-  var pathD = values.map(function(v,i){ return (i===0?'M':'L') + xPos(i).toFixed(1) + ',' + yPos(v).toFixed(1); }).join(' ');
-  var dots = values.map(function(v,i){
+  var bars = values.map(function(v,i){
     var color = dpWarnaBand3_(v, merahBatas, hijauBatas);
-    return '<circle cx="' + xPos(i).toFixed(1) + '" cy="' + yPos(v).toFixed(1) + '" r="4.2" fill="' + color + '" stroke="#fff" stroke-width="1.4"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></circle>';
+    var by = yPos(v);
+    var bh = Math.max(0, (padT+innerH) - by);
+    return '<rect x="' + xLeft(i).toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2.5" fill="' + color + '"><title>' + months[i] + ': ' + dpFmt(v,dec) + unit + '</title></rect>';
   }).join('');
 
   var xLabels = months.map(function(m,i){
-    var anchor = (i === 0) ? 'start' : (i === n-1 ? 'end' : 'middle');
-    var xa = (i === 0) ? padL : (i === n-1 ? (w-padR) : xPos(i));
-    return '<text x="' + xa.toFixed(1) + '" y="' + (h-6) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
+    var xc = xLeft(i) + barW/2;
+    return '<text x="' + xc.toFixed(1) + '" y="' + (h-6) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#8B96AF" font-family="Space Mono, monospace">' + m + '</text>';
   }).join('');
 
   var lastVal = values[values.length - 1];
   var lastColor = dpWarnaBand3_(lastVal, merahBatas, hijauBatas);
 
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block;">' +
-    bandSvg +
-    '<path d="' + pathD + '" fill="none" stroke="#38BDF8" stroke-width="2.6"></path>' +
-    dots + xLabels +
+    bars + bandSvg + xLabels +
     '</svg>';
 
   return '<div class="chart-card" style="flex:1 1 260px;">' +
